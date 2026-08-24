@@ -1,6 +1,6 @@
-# Self-Serve Native Ad Platform (Ad-Module)
+# Self-Serve Native Ad Platform
 
-Ad-Module is a self-serve native advertising platform built with Next.js 15, React, Tailwind CSS, and PostgreSQL. It allows advertisers to create, run, and track native ad campaigns using a hybrid budget model (both CPC and CPM simultaneously) with real-time analytics. It includes an administrative moderation workflow for approving, rejecting, or pausing campaigns before they go live.
+This is a self-serve native advertising platform built with Next.js 15, React, Tailwind CSS, and PostgreSQL. It allows advertisers to create, run, and track native ad campaigns using a hybrid budget model (both CPC and CPM simultaneously) with real-time analytics. It includes an administrative moderation workflow for approving, rejecting, or pausing campaigns before they go live.
 
 ---
 
