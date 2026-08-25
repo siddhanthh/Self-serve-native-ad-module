@@ -4,21 +4,26 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import CampaignForm, { CampaignData } from "@/components/CampaignForm";
 
-interface Campaign {
-  id: number;
-  company_name: string;
+interface Ad {
+  id?: number;
   title: string;
   description: string;
   image_url: string;
   destination_url: string;
+  cta_text?: string;
+}
+
+interface Campaign {
+  id: number;
+  company_name: string;
   start_date: string;
   end_date: string;
-  cta_text?: string;
   billing_type?: string;
   cpc_rate?: string | number;
   cpm_rate?: string | number;
   total_budget?: string | number;
   spent_amount?: string | number;
+  ads: Ad[];
 }
 
 export default function EditCampaignForm({ campaign }: { campaign: Campaign }) {
@@ -34,16 +39,19 @@ export default function EditCampaignForm({ campaign }: { campaign: Campaign }) {
 
   const initialData: CampaignData = {
     companyName: campaign.company_name,
-    title: campaign.title,
-    description: campaign.description,
-    imageUrl: campaign.image_url,
-    destinationUrl: campaign.destination_url,
     duration: calculateDays(),
-    ctaText: campaign.cta_text || "Learn More",
     billingType: campaign.billing_type || "CPM",
     cpcRate: Number(campaign.cpc_rate) || 0.00,
     cpmRate: Number(campaign.cpm_rate) || 0.00,
     totalBudget: Number(campaign.total_budget) || 0.00,
+    ads: campaign.ads.map(ad => ({
+      id: ad.id,
+      title: ad.title,
+      description: ad.description,
+      imageUrl: ad.image_url,
+      destinationUrl: ad.destination_url,
+      ctaText: ad.cta_text || "Learn More"
+    }))
   };
 
   const handleSubmit = async (formData: CampaignData) => {
@@ -54,7 +62,13 @@ export default function EditCampaignForm({ campaign }: { campaign: Campaign }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: campaign.id,
-          ...formData,
+          companyName: formData.companyName,
+          duration: formData.duration,
+          billingType: formData.billingType,
+          cpcRate: formData.cpcRate,
+          cpmRate: formData.cpmRate,
+          totalBudget: formData.totalBudget,
+          ads: formData.ads
         }),
       });
 

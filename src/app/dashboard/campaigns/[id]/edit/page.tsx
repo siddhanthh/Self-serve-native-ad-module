@@ -41,7 +41,14 @@ export default async function EditCampaignPage({ params }: PageProps) {
 
   const campaign = campaignRes.rows[0];
 
-  // 3. Verify ownership (Admins cannot edit others' campaigns)
+  // 3. Query all associated ad creatives
+  const adsRes = await query(
+    `SELECT id, title, description, image_url, destination_url, cta_text FROM ads WHERE campaign_id = $1 ORDER BY id ASC`,
+    [id]
+  );
+  const ads = adsRes.rows;
+
+  // 4. Verify ownership (Admins cannot edit others' campaigns)
   const isAuthorized = campaign.user_id === userId;
   if (!isAuthorized) {
     return (
@@ -53,7 +60,7 @@ export default async function EditCampaignPage({ params }: PageProps) {
 
   return (
     <div className="p-6">
-      <EditCampaignForm campaign={campaign} />
+      <EditCampaignForm campaign={{ ...campaign, ads }} />
     </div>
   );
 }
