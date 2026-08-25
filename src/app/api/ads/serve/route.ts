@@ -1,7 +1,17 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { getCorsHeaders } from '@/lib/cors';
 
-export async function GET() {
+export async function OPTIONS(req: Request) {
+  const origin = req.headers.get('origin');
+  const corsHeaders = await getCorsHeaders(origin);
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
+export async function GET(req: Request) {
+  const origin = req.headers.get('origin');
+  const corsHeaders = await getCorsHeaders(origin);
+
   try {
     const { rows: ads } = await query(`
       SELECT c.id, c.company_name, c.title, c.description, c.image_url, c.destination_url, c.cta_text 
@@ -32,15 +42,11 @@ export async function GET() {
       formattedNativeAds, 
       {
         status: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        },
+        headers: corsHeaders,
       }
     );
   } catch (error) {
     console.error('Failed to serve ads:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500, headers: corsHeaders });
   }
 }

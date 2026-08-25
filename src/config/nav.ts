@@ -25,4 +25,9 @@ export const navConfig: NavItem[] = [
     href: '/dashboard/users',
     roles: ['admin','superadmin'], // Only admins see this
   },
+  {
+    title: 'Settings',
+    href: '/dashboard/settings',
+    roles: ['superadmin'],
+  },
 ];

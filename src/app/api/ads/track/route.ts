@@ -1,24 +1,26 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { getCorsHeaders } from '@/lib/cors';
 
-export async function OPTIONS() {
+export async function OPTIONS(req: Request) {
+  const origin = req.headers.get('origin');
+  const corsHeaders = await getCorsHeaders(origin);
   return NextResponse.json({}, {
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
+    headers: corsHeaders,
   });
 }
 
 export async function POST(req: Request) {
+  const origin = req.headers.get('origin');
+  const corsHeaders = await getCorsHeaders(origin);
+
   try {
     const { campaignId, action } = await req.json();
 
     const allowedActions = ['serve', 'view', 'click'];
     
     if (!campaignId || !allowedActions.includes(action)) {
-      return NextResponse.json({ error: 'Invalid data or unsupported action' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid data or unsupported action' }, { status: 400, headers: corsHeaders });
     }
 
     const client = await pool.connect();
@@ -53,15 +55,11 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ success: true }, {
-      headers: { 
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      },
+      headers: corsHeaders,
     });
 
   } catch (error) {
     console.error('Tracking Error:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500, headers: corsHeaders });
   }
 }

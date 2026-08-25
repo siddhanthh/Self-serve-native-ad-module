@@ -11,7 +11,7 @@ async function runMigration() {
     // Drop table if exists to be safe during dev
     await pool.query(`DROP TABLE IF EXISTS campaign_finances`);
 
-    // Create table
+    // Create table campaign_finances
     await pool.query(`
       CREATE TABLE campaign_finances (
         campaign_id INTEGER PRIMARY KEY REFERENCES campaigns(id) ON DELETE CASCADE,
@@ -24,6 +24,22 @@ async function runMigration() {
       );
     `);
     console.log("Created table campaign_finances.");
+
+    // Create table allowed_origins
+    await pool.query(`DROP TABLE IF EXISTS allowed_origins`);
+    await pool.query(`
+      CREATE TABLE allowed_origins (
+        id SERIAL PRIMARY KEY,
+        origin VARCHAR(255) NOT NULL UNIQUE,
+        label VARCHAR(100),
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    await pool.query(`
+      INSERT INTO allowed_origins (origin, label) VALUES ('http://localhost:3000', 'Local Dev');
+    `);
+    console.log("Created table allowed_origins and seeded Local Dev.");
 
     // Backfill
     await pool.query(`
