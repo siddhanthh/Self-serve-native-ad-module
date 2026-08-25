@@ -13,18 +13,18 @@ export default async function DashboardLayout({
   const token = cookieStore.get('auth_token')?.value;
 
   let userRole = 'viewer';
-  let userEmail = 'Loading...';
+  let userEmail = 'User';
 
   if (token) {
     const payload = await verifyToken(token);
     if (payload) {
-      userRole = payload.role as string;
-      userEmail = payload.email as string;
+      userRole = (payload.role as string) || 'viewer';
+      userEmail = (payload.email as string) || 'User';
     }
   }
 
-  // Extract the first letter of the email for the avatar
-  const initial = userEmail !== 'Loading...' ? userEmail.charAt(0).toUpperCase() : 'U';
+  // Extract the first letter of the email for the avatar safely
+  const initial = (userEmail && userEmail.length > 0 ? userEmail.charAt(0) : 'U').toUpperCase();
 
   // 2. Filter Nav items
   const allowedNavItems = navConfig.filter((item) =>

@@ -236,8 +236,8 @@ export default async function DashboardOverview() {
               </svg>
             </div>
           </div>
-          <div className="text-3xl font-black text-gray-950 tracking-tight font-mono">{totalServed.toLocaleString('en-IN')}</div>
-          <p className="text-xs text-gray-400 mt-2">Times fetched by feed endpoints</p>
+          <div className="text-3xl font-black text-gray-900 tracking-tight font-mono">{totalServed.toLocaleString('en-IN')}</div>
+          <p className="text-xs text-gray-500 mt-2">Times fetched by feed endpoints</p>
         </div>
 
         {/* Card 2: Views (Visible) */}
@@ -251,8 +251,8 @@ export default async function DashboardOverview() {
               </svg>
             </div>
           </div>
-          <div className="text-3xl font-black text-indigo-650 tracking-tight font-mono">{totalViews.toLocaleString('en-IN')}</div>
-          <p className="text-xs text-gray-400 mt-2">Times ads were rendered on screen</p>
+          <div className="text-3xl font-black text-indigo-600 tracking-tight font-mono">{totalViews.toLocaleString('en-IN')}</div>
+          <p className="text-xs text-gray-500 mt-2">Times ads were rendered on screen</p>
         </div>
 
         {/* Card 3: Clicks */}
@@ -265,8 +265,8 @@ export default async function DashboardOverview() {
               </svg>
             </div>
           </div>
-          <div className="text-3xl font-black text-green-650 tracking-tight font-mono">{totalClicks.toLocaleString('en-IN')}</div>
-          <p className="text-xs text-gray-400 mt-2">User interactions & redirects</p>
+          <div className="text-3xl font-black text-green-600 tracking-tight font-mono">{totalClicks.toLocaleString('en-IN')}</div>
+          <p className="text-xs text-gray-500 mt-2">User interactions & redirects</p>
         </div>
 
         {/* Card 4: CTR */}
@@ -275,12 +275,12 @@ export default async function DashboardOverview() {
             <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Average CTR</span>
             <div className="p-1.5 bg-yellow-50 text-yellow-600 rounded-lg">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
             </div>
           </div>
-          <div className="text-3xl font-black text-yellow-650 tracking-tight font-mono">{overallCTR}</div>
-          <p className="text-xs text-gray-400 mt-2">Clicks / Views</p>
+          <div className="text-3xl font-black text-yellow-600 tracking-tight font-mono">{overallCTR}</div>
+          <p className="text-xs text-gray-500 mt-2">Clicks / Views</p>
         </div>
 
         {/* Card 5: Total Ad Spend */}
@@ -291,10 +291,10 @@ export default async function DashboardOverview() {
               <span className="text-xs font-bold font-sans">₹</span>
             </div>
           </div>
-          <div className="text-2xl font-black text-emerald-650 tracking-tight font-mono">
+          <div className="text-2xl font-black text-emerald-600 tracking-tight font-mono">
             ₹{totalSpend.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
-          <p className="text-xs text-gray-400 mt-2">Out of ₹{totalBudget.toLocaleString('en-IN')} budget</p>
+          <p className="text-xs text-gray-500 mt-2">Out of ₹{totalBudget.toLocaleString('en-IN')} budget</p>
         </div>
       </div>
 

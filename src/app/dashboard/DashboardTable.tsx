@@ -192,10 +192,10 @@ export default function DashboardTable({
                                     >
                                       <td className="px-4 py-3 font-semibold text-gray-800 truncate max-w-[200px]">{ad.title}</td>
                                       <td className="px-4 py-3">
-                                        <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${
-                                          ad.approval_status === 'approved' ? 'bg-green-50 text-green-750 border-green-200' :
-                                          ad.approval_status === 'rejected' ? 'bg-red-50 text-red-750 border-red-200' :
-                                          'bg-yellow-50 text-yellow-750 border-yellow-200'
+                                        <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase border shadow-sm ${
+                                          ad.approval_status === 'approved' ? 'bg-green-50 text-green-800 border-green-300' :
+                                          ad.approval_status === 'rejected' ? 'bg-red-50 text-red-800 border-red-300' :
+                                          'bg-yellow-50 text-yellow-800 border-yellow-300'
                                         }`}>
                                           {ad.approval_status}
                                         </span>
@@ -206,13 +206,19 @@ export default function DashboardTable({
                                             e.stopPropagation();
                                             handleToggleAdStatus(ad.id, ad.is_active, campaign.id);
                                           }}
-                                          className={`px-2 py-0.5 rounded text-[10px] font-semibold border cursor-pointer ${
-                                            ad.is_active
-                                              ? "bg-green-50 text-green-700 border-green-200"
-                                              : "bg-gray-55 text-gray-500 border-gray-200"
+                                          className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase border cursor-pointer transition-colors ${
+                                            ad.approval_status !== 'approved'
+                                              ? "bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200"
+                                              : ad.is_active
+                                                ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
+                                                : "bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-250"
                                           }`}
                                         >
-                                          {ad.is_active ? "Active" : "Paused"}
+                                          {ad.approval_status !== 'approved' 
+                                            ? "Inactive" 
+                                            : ad.is_active 
+                                              ? "Serving" 
+                                              : "Paused"}
                                         </button>
                                       </td>
                                       <td className="px-4 py-3 text-right text-blue-600 font-bold">Select</td>
