@@ -18,27 +18,29 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
     const userId = payload.userId;
-    const userRole = payload.role;
 
     // 2. Parse the request body
     const body = await req.json();
     const { 
       id, 
       companyName, 
-      title, 
-      description, 
-      imageUrl, 
-      destinationUrl, 
       duration, 
-      ctaText,
       billingType,
       cpcRate,
       cpmRate,
-      totalBudget 
+      totalBudget,
+      ads // array of { id?: number, title, description, imageUrl, destinationUrl, ctaText }
     } = body;
 
-    if (!id || !companyName || !title || !description || !imageUrl || !destinationUrl || !duration) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!id || !companyName || !duration || !ads || !Array.isArray(ads) || ads.length === 0) {
+      return NextResponse.json({ error: 'Missing required fields or creatives list' }, { status: 400 });
+    }
+
+    // Validate that each ad creative has the required fields
+    for (const ad of ads) {
+      if (!ad.title || !ad.description || !ad.imageUrl || !ad.destinationUrl) {
+        return NextResponse.json({ error: 'All ad creatives must contain a title, description, image, and destination URL' }, { status: 400 });
+      }
     }
 
     const days = parseInt(duration, 10);
@@ -48,7 +50,7 @@ export async function POST(req: Request) {
 
     const client = await pool.connect();
     try {
-      // 3. Verify Ownership or Admin privileges
+      // 3. Verify Ownership
       const checkSql = `SELECT user_id FROM campaigns WHERE id = $1`;
       const checkRes = await client.query(checkSql, [id]);
 
@@ -72,27 +74,82 @@ export async function POST(req: Request) {
 
       await client.query('BEGIN');
 
-      // 5. Update campaign in the database
-      // Setting approval_status to 'pending' and is_active to false so it goes for approval again
+      // 5. Update campaign container in the database
       const updateCampaignSql = `
         UPDATE campaigns
-        SET company_name = $1, title = $2, description = $3, image_url = $4, destination_url = $5, start_date = $6, end_date = $7, approval_status = 'pending', is_active = false, cta_text = $8
-        WHERE id = $9
+        SET company_name = $1, start_date = $2, end_date = $3
+        WHERE id = $4
       `;
 
       await client.query(updateCampaignSql, [
         companyName,
-        title,
-        description,
-        imageUrl,
-        destinationUrl,
         startDate.toISOString(),
         endDate.toISOString(),
-        ctaText || 'Learn More',
         id
       ]);
 
-      // 6. Update or insert campaign finances
+      // 6. Sync ads: Delete ads not in the incoming payload
+      const incomingAdIds = ads.filter(ad => ad.id !== undefined).map(ad => ad.id);
+      if (incomingAdIds.length > 0) {
+        await client.query(
+          'DELETE FROM ads WHERE campaign_id = $1 AND id NOT IN (' + incomingAdIds.join(',') + ')',
+          [id]
+        );
+      } else {
+        await client.query('DELETE FROM ads WHERE campaign_id = $1', [id]);
+      }
+
+      // 7. Insert or update each ad creative
+      for (const ad of ads) {
+        if (ad.id) {
+          // If editing an existing ad, verify if it was modified. If modified, set approval to pending.
+          const existingAdQuery = await client.query(
+            'SELECT title, description, image_url, destination_url, cta_text FROM ads WHERE id = $1',
+            [ad.id]
+          );
+          const existingAd = existingAdQuery.rows[0];
+
+          const isModified = !existingAd ||
+            existingAd.title !== ad.title ||
+            existingAd.description !== ad.description ||
+            existingAd.image_url !== ad.imageUrl ||
+            existingAd.destination_url !== ad.destinationUrl ||
+            existingAd.cta_text !== (ad.ctaText || 'Learn More');
+
+          const updateAdSql = `
+            UPDATE ads
+            SET title = $1, description = $2, image_url = $3, destination_url = $4, cta_text = $5,
+                approval_status = CASE WHEN $6 = TRUE THEN 'pending' ELSE approval_status END
+            WHERE id = $7 AND campaign_id = $8
+          `;
+          await client.query(updateAdSql, [
+            ad.title,
+            ad.description,
+            ad.imageUrl,
+            ad.destinationUrl,
+            ad.ctaText || 'Learn More',
+            isModified,
+            ad.id,
+            id
+          ]);
+        } else {
+          // If it is a new ad, insert it as pending
+          const insertAdSql = `
+            INSERT INTO ads (campaign_id, title, description, image_url, destination_url, cta_text, approval_status, is_active)
+            VALUES ($1, $2, $3, $4, $5, $6, 'pending', TRUE)
+          `;
+          await client.query(insertAdSql, [
+            id,
+            ad.title,
+            ad.description,
+            ad.imageUrl,
+            ad.destinationUrl,
+            ad.ctaText || 'Learn More'
+          ]);
+        }
+      }
+
+      // 8. Update or insert campaign finances
       const upsertFinanceSql = `
         INSERT INTO campaign_finances (campaign_id, billing_type, cpc_rate, cpm_rate, total_budget)
         VALUES ($1, $2, $3, $4, $5)
@@ -114,7 +171,7 @@ export async function POST(req: Request) {
 
       await client.query('COMMIT');
 
-      return NextResponse.json({ message: 'Campaign updated and sent for moderation successfully!' }, { status: 200 });
+      return NextResponse.json({ message: 'Campaign and ads updated successfully!' }, { status: 200 });
 
     } catch (err) {
       await client.query('ROLLBACK');

@@ -14,10 +14,12 @@ export async function GET(req: Request) {
 
   try {
     const { rows: ads } = await query(`
-      SELECT c.id, c.company_name, c.title, c.description, c.image_url, c.destination_url, c.cta_text 
-      FROM campaigns c
+      SELECT a.id as ad_id, c.id as campaign_id, c.company_name, a.title, a.description, a.image_url, a.destination_url, a.cta_text 
+      FROM ads a
+      JOIN campaigns c ON a.campaign_id = c.id
       LEFT JOIN campaign_finances cf ON c.id = cf.campaign_id
-      WHERE c.approval_status = 'approved' 
+      WHERE a.approval_status = 'approved'
+        AND a.is_active = true
         AND c.is_active = true 
         AND CURRENT_TIMESTAMP >= c.start_date 
         AND CURRENT_TIMESTAMP <= c.end_date
@@ -27,7 +29,7 @@ export async function GET(req: Request) {
     `);
 
     const formattedNativeAds = ads.map((ad) => ({
-      id: `ad_campaign_${ad.id}`,
+      id: `ad_${ad.ad_id}`,
       isAd: true,
       authorName: ad.company_name !== 'N/A' ? ad.company_name : ad.title,
       advertiserLogo: "https://ui-avatars.com/api/?name=" + encodeURIComponent(ad.company_name || 'Ad') + "&background=random", 
@@ -35,7 +37,8 @@ export async function GET(req: Request) {
       images: [ad.image_url], 
       ctaText: ad.cta_text || "Learn More",  
       targetUrl: ad.destination_url,
-      campaignId: ad.id       
+      adId: ad.ad_id,
+      campaignId: ad.campaign_id       
     }));
 
     return NextResponse.json(

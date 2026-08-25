@@ -15,11 +15,11 @@ export async function POST(req: Request) {
   const corsHeaders = await getCorsHeaders(origin);
 
   try {
-    const { campaignId, action } = await req.json();
+    const { campaignId, adId, action } = await req.json();
 
     const allowedActions = ['serve', 'view', 'click'];
     
-    if (!campaignId || !allowedActions.includes(action)) {
+    if (!campaignId || !adId || !allowedActions.includes(action)) {
       return NextResponse.json({ error: 'Invalid data or unsupported action' }, { status: 400, headers: corsHeaders });
     }
 
@@ -28,9 +28,9 @@ export async function POST(req: Request) {
       await client.query('BEGIN');
 
       await client.query(`
-        INSERT INTO campaign_events (campaign_id, event_type) 
-        VALUES ($1, $2)
-      `, [campaignId, action]);
+        INSERT INTO campaign_events (campaign_id, ad_id, event_type) 
+        VALUES ($1, $2, $3)
+      `, [campaignId, adId, action]);
 
       await client.query(`
         UPDATE campaign_finances

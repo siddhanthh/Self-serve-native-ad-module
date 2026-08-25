@@ -20,9 +20,9 @@ export async function POST(req: Request) {
 
     // 3. Parse the Request Body
     const body = await req.json();
-    const { campaignId, action } = body;
+    const { adId, action } = body;
 
-    if (!campaignId || (action !== 'approve' && action !== 'reject' && action !== 'pause')) {
+    if (!adId || (action !== 'approve' && action !== 'reject' && action !== 'pause')) {
       return NextResponse.json({ error: 'Invalid request data' }, { status: 400 });
     }
 
@@ -38,23 +38,23 @@ export async function POST(req: Request) {
       isActive = false;
     }
 
-    // 5. Execute the SQL Update
+    // 5. Execute the SQL Update on the ads table
     const sql = `
-      UPDATE campaigns 
+      UPDATE ads 
       SET approval_status = $1, is_active = $2
       WHERE id = $3
       RETURNING id, approval_status, is_active;
     `;
 
-    const result = await query(sql, [approvalStatus, isActive, campaignId]);
+    const result = await query(sql, [approvalStatus, isActive, adId]);
 
     if (result.rowCount === 0) {
-      return NextResponse.json({ error: 'Campaign not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Ad not found' }, { status: 404 });
     }
 
     // 6. Return Success
     return NextResponse.json(
-      { message: `Campaign successfully ${action}d!`, data: result.rows[0] }, 
+      { message: `Ad successfully ${action}d!`, data: result.rows[0] }, 
       { status: 200 }
     );
 

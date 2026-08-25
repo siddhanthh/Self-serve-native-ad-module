@@ -23,20 +23,23 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { 
       companyName, 
-      title, 
-      description, 
-      imageUrl, 
-      destinationUrl, 
       duration, 
-      ctaText,
       billingType,
       cpcRate,
       cpmRate,
-      totalBudget 
+      totalBudget,
+      ads // array of { title, description, imageUrl, destinationUrl, ctaText }
     } = body;
 
-    if (!companyName || !title || !description || !imageUrl || !destinationUrl || !duration) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!companyName || !duration || !ads || !Array.isArray(ads) || ads.length === 0) {
+      return NextResponse.json({ error: 'Missing required fields or creatives list' }, { status: 400 });
+    }
+
+    // Validate that each ad creative has the required fields
+    for (const ad of ads) {
+      if (!ad.title || !ad.description || !ad.imageUrl || !ad.destinationUrl) {
+        return NextResponse.json({ error: 'All ad creatives must contain a title, description, image, and destination URL' }, { status: 400 });
+      }
     }
 
     const days = parseInt(duration, 10);
@@ -53,24 +56,36 @@ export async function POST(req: Request) {
       await client.query('BEGIN');
 
       const campaignSql = `
-        INSERT INTO campaigns (user_id, company_name, title, description, image_url, destination_url, start_date, end_date, approval_status, cta_text)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending', $9)
+        INSERT INTO campaigns (user_id, company_name, start_date, end_date, is_active)
+        VALUES ($1, $2, $3, $4, TRUE)
         RETURNING id;
       `;
 
       const campaignResult = await client.query(campaignSql, [
         userId,
         companyName,
-        title,
-        description,
-        imageUrl,
-        destinationUrl,
         startDate.toISOString(),
-        endDate.toISOString(),
-        ctaText || 'Learn More'
+        endDate.toISOString()
       ]);
 
       const campaignId = campaignResult.rows[0].id;
+
+      // Bulk-insert the ad creatives
+      const adSql = `
+        INSERT INTO ads (campaign_id, title, description, image_url, destination_url, cta_text, approval_status, is_active)
+        VALUES ($1, $2, $3, $4, $5, $6, 'pending', TRUE);
+      `;
+
+      for (const ad of ads) {
+        await client.query(adSql, [
+          campaignId,
+          ad.title,
+          ad.description,
+          ad.imageUrl,
+          ad.destinationUrl,
+          ad.ctaText || 'Learn More'
+        ]);
+      }
 
       const financeSql = `
         INSERT INTO campaign_finances (campaign_id, billing_type, cpc_rate, cpm_rate, total_budget, spent_amount)
@@ -88,7 +103,7 @@ export async function POST(req: Request) {
       await client.query('COMMIT');
 
       return NextResponse.json(
-        { message: 'Campaign submitted successfully!', campaignId }, 
+        { message: 'Campaign and ads submitted successfully!', campaignId }, 
         { status: 201 }
       );
     } catch (err) {
