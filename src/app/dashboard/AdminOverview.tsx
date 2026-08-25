@@ -5,30 +5,36 @@ import Link from "next/link";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import DashboardTable from "./DashboardTable";
 
-type Campaign = {
+type Ad = {
   id: number;
-  user_id: number;
-  company_name: string;
   title: string;
   description: string;
   image_url: string;
   destination_url: string;
+  cta_text: string;
   approval_status: string;
+  is_active: boolean;
+};
+
+type Campaign = {
+  id: number;
+  user_id: number;
+  company_name: string;
   is_active: boolean;
   start_date: string;
   end_date: string;
-  cta_text?: string;
   billing_type?: string;
   cpc_rate?: string | number;
   cpm_rate?: string | number;
   total_budget?: string | number;
   spent_amount?: string | number;
+  ads?: Ad[];
 };
 
 interface AdminOverviewProps {
   campaigns: Campaign[];
   eventMap: Record<number, { serve: number; view: number; click: number }>;
-  timelineMap: Record<number, Array<{ date: string; serve: number; view: number; click: number }>>;
+  timelineMap: Record<number, Array<{ date: string; serve: number; view: number; click: number; spend: number }>>;
   overallStats: { serve: number; view: number; click: number };
   overallCTR: string;
   activePlacements: number;
@@ -125,8 +131,8 @@ export default function AdminOverview({
               </svg>
             </div>
           </div>
-          <div className="text-3xl font-black text-blue-600 tracking-tight font-mono">
-            {overallStats.serve.toLocaleString()}
+          <div className="text-3xl font-black text-gray-900 tracking-tight font-mono">
+            {overallStats.serve.toLocaleString('en-IN')}
           </div>
           <p className="text-xs text-gray-400 mt-2">Platform-wide total impressions</p>
         </div>
@@ -143,7 +149,7 @@ export default function AdminOverview({
             </div>
           </div>
           <div className="text-3xl font-black text-indigo-600 tracking-tight font-mono">
-            {overallStats.view.toLocaleString()}
+            {overallStats.view.toLocaleString('en-IN')}
           </div>
           <p className="text-xs text-gray-400 mt-2">Total views logged on frontend feeds</p>
         </div>
@@ -161,7 +167,7 @@ export default function AdminOverview({
           <div className="text-3xl font-black text-yellow-600 tracking-tight font-mono">
             {overallCTR}
           </div>
-          <p className="text-xs text-gray-400 mt-2">Total Clicks: {overallStats.click.toLocaleString()}</p>
+          <p className="text-xs text-gray-400 mt-2">Total Clicks: {overallStats.click.toLocaleString('en-IN')}</p>
         </div>
 
         {/* Platform Revenue */}
@@ -173,9 +179,9 @@ export default function AdminOverview({
             </div>
           </div>
           <div className="text-2xl font-black text-emerald-600 tracking-tight font-mono">
-            ₹{totalSpend.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            ₹{totalSpend.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
-          <p className="text-xs text-gray-400 mt-2">Allocated Budget: ₹{totalBudget.toLocaleString()}</p>
+          <p className="text-xs text-gray-400 mt-2">Allocated Budget: ₹{totalBudget.toLocaleString('en-IN')}</p>
         </div>
       </div>
 

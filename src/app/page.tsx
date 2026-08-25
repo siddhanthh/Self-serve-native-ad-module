@@ -77,12 +77,17 @@ const faqItems = [
 
 export default async function Home() {
   const { rows: activeAds } = await query(`
-    SELECT * FROM campaigns 
-    WHERE approval_status = 'approved' 
-      AND is_active = true 
-      AND CURRENT_TIMESTAMP >= start_date 
-      AND CURRENT_TIMESTAMP <= end_date
-    ORDER BY created_at DESC
+    SELECT a.id, a.title, a.description, a.image_url, a.destination_url, c.company_name
+    FROM ads a
+    JOIN campaigns c ON a.campaign_id = c.id
+    LEFT JOIN campaign_finances cf ON c.id = cf.campaign_id
+    WHERE a.approval_status = 'approved' 
+      AND a.is_active = true 
+      AND c.is_active = true
+      AND CURRENT_TIMESTAMP >= c.start_date 
+      AND CURRENT_TIMESTAMP <= c.end_date
+      AND (cf.spent_amount < cf.total_budget OR cf.campaign_id IS NULL)
+    ORDER BY a.created_at DESC
   `);
 
   return (

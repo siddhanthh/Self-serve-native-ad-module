@@ -29,7 +29,27 @@ export default async function DashboardOverview() {
        WHERE c.user_id = $1 
        ORDER BY c.created_at DESC`;
   const campaignsParams = isAdmin ? [] : [payload.userId];
-  const { rows: campaigns } = await query(campaignsQuery, campaignsParams);
+  const { rows: dbCampaigns } = await query(campaignsQuery, campaignsParams);
+
+  // 1b. Fetch all ads for fetched campaigns
+  const campaignIds = dbCampaigns.map(c => c.id);
+  let adsMap: Record<number, any[]> = {};
+  if (campaignIds.length > 0) {
+    const { rows: dbAds } = await query(
+      `SELECT * FROM ads WHERE campaign_id IN (${campaignIds.join(',')}) ORDER BY id ASC`
+    );
+    dbAds.forEach(ad => {
+      if (!adsMap[ad.campaign_id]) {
+        adsMap[ad.campaign_id] = [];
+      }
+      adsMap[ad.campaign_id].push(ad);
+    });
+  }
+
+  const campaigns = dbCampaigns.map(c => ({
+    ...c,
+    ads: adsMap[c.id] || []
+  }));
 
   // 2. Fetch overall event counts (Platform-wide for admin, user's for advertiser)
   const overallEventsQuery = isAdmin
@@ -140,11 +160,12 @@ export default async function DashboardOverview() {
   const now = new Date();
   const totalCampaigns = campaigns.length;
   
-  const activePlacements = campaigns.filter((ad) => {
-    const start = new Date(ad.start_date);
-    const end = new Date(ad.end_date);
+  const activePlacements = campaigns.filter((c) => {
+    const start = new Date(c.start_date);
+    const end = new Date(c.end_date);
     const isTimeActive = now >= start && now <= end;
-    return ad.approval_status === "approved" && ad.is_active && isTimeActive;
+    const hasApprovedAds = c.ads.some((ad: any) => ad.approval_status === "approved" && ad.is_active);
+    return c.is_active && isTimeActive && hasApprovedAds;
   }).length;
 
   const totalServed = overallStats.serve;
@@ -215,7 +236,7 @@ export default async function DashboardOverview() {
               </svg>
             </div>
           </div>
-          <div className="text-3xl font-black text-gray-900 tracking-tight font-mono">{totalServed.toLocaleString()}</div>
+          <div className="text-3xl font-black text-gray-950 tracking-tight font-mono">{totalServed.toLocaleString('en-IN')}</div>
           <p className="text-xs text-gray-400 mt-2">Times fetched by feed endpoints</p>
         </div>
 
@@ -230,7 +251,7 @@ export default async function DashboardOverview() {
               </svg>
             </div>
           </div>
-          <div className="text-3xl font-black text-indigo-600 tracking-tight font-mono">{totalViews.toLocaleString()}</div>
+          <div className="text-3xl font-black text-indigo-650 tracking-tight font-mono">{totalViews.toLocaleString('en-IN')}</div>
           <p className="text-xs text-gray-400 mt-2">Times ads were rendered on screen</p>
         </div>
 
@@ -244,7 +265,7 @@ export default async function DashboardOverview() {
               </svg>
             </div>
           </div>
-          <div className="text-3xl font-black text-green-600 tracking-tight font-mono">{totalClicks.toLocaleString()}</div>
+          <div className="text-3xl font-black text-green-650 tracking-tight font-mono">{totalClicks.toLocaleString('en-IN')}</div>
           <p className="text-xs text-gray-400 mt-2">User interactions & redirects</p>
         </div>
 
@@ -254,11 +275,11 @@ export default async function DashboardOverview() {
             <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Average CTR</span>
             <div className="p-1.5 bg-yellow-50 text-yellow-600 rounded-lg">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
             </div>
           </div>
-          <div className="text-3xl font-black text-yellow-600 tracking-tight font-mono">{overallCTR}</div>
+          <div className="text-3xl font-black text-yellow-650 tracking-tight font-mono">{overallCTR}</div>
           <p className="text-xs text-gray-400 mt-2">Clicks / Views</p>
         </div>
 
@@ -270,10 +291,10 @@ export default async function DashboardOverview() {
               <span className="text-xs font-bold font-sans">₹</span>
             </div>
           </div>
-          <div className="text-2xl font-black text-emerald-600 tracking-tight font-mono">
-            ₹{totalSpend.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <div className="text-2xl font-black text-emerald-650 tracking-tight font-mono">
+            ₹{totalSpend.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
-          <p className="text-xs text-gray-400 mt-2">Out of ₹{totalBudget.toLocaleString()} budget</p>
+          <p className="text-xs text-gray-400 mt-2">Out of ₹{totalBudget.toLocaleString('en-IN')} budget</p>
         </div>
       </div>
 
