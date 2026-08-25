@@ -19,31 +19,33 @@ export default async function ModerationPage() {
     );
   }
 
-  // Fetch ALL campaigns for the audit log, ordered by newest first
+  // Fetch ALL ads for the audit log, ordered by newest first
   const { rows: allAds } = await query(
-    `SELECT c.*, cf.billing_type, cf.cpc_rate, cf.cpm_rate, cf.total_budget, cf.spent_amount 
-     FROM campaigns c 
-     LEFT JOIN campaign_finances cf ON c.id = cf.campaign_id 
-     ORDER BY c.created_at DESC`
+    `SELECT a.id, a.campaign_id, c.company_name, a.title, a.description, a.image_url, a.destination_url, a.cta_text, a.approval_status, a.is_active,
+            c.start_date, c.end_date, c.user_id, cf.billing_type, cf.cpc_rate, cf.cpm_rate, cf.total_budget, cf.spent_amount 
+     FROM ads a
+     JOIN campaigns c ON a.campaign_id = c.id
+     LEFT JOIN campaign_finances cf ON c.id = cf.campaign_id
+     ORDER BY a.created_at DESC`
   );
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Campaign Audit Log</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Campaign Ad Creative Audit Log</h2>
           <p className="text-sm text-gray-500 mt-1">
-            Review, approve, and track all ad campaigns across the network.
+            Review, approve, and track all ad variations across the network.
           </p>
         </div>
       </div>
 
       {allAds.length === 0 ? (
         <div className="bg-white p-12 text-center rounded-xl border border-gray-200 shadow-sm">
-          <p className="text-gray-500">No campaigns have been submitted yet.</p>
+          <p className="text-gray-500">No ad creatives have been configured yet.</p>
         </div>
       ) : (
-        <ModerationTable campaigns={allAds} userRole={payload.role} />
+        <ModerationTable ads={allAds} userRole={payload.role} />
       )}
     </div>
   );

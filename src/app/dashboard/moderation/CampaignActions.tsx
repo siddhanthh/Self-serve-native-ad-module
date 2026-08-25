@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function CampaignActions({ campaignId }: { campaignId: number }) {
+export default function CampaignActions({ adId }: { adId: number }) {
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -13,7 +13,7 @@ export default function CampaignActions({ campaignId }: { campaignId: number }) 
       const res = await fetch("/api/campaigns/moderate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ campaignId, action }),
+        body: JSON.stringify({ adId, action }),
       });
 
       const data = await res.json();
@@ -22,8 +22,8 @@ export default function CampaignActions({ campaignId }: { campaignId: number }) 
         throw new Error(data.error || "Action failed");
       }
 
-      alert(`Campaign successfully ${action}d!`);
-      router.refresh(); // This magically tells Next.js to re-run the Server Component and update the list!
+      alert(`Ad successfully ${action}d!`);
+      router.refresh(); 
     } catch (error: any) {
       alert(error.message);
     } finally {
