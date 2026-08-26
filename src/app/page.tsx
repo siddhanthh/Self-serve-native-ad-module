@@ -118,6 +118,7 @@ export default async function Home() {
               {activeAds.length > 0 && (
                 <a href="#partner-offers" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">Partner Offers</a>
               )}
+              <Link href="/docs" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">Documentation</Link>
               <a href="#faq" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">FAQ</a>
             </nav>
 
@@ -373,6 +374,113 @@ export default async function Home() {
         </section>
       )}
 
+      {/* DEVELOPER & PUBLISHER INTEGRATION SECTION */}
+      <section id="integration" className="py-20 bg-white border-t border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            
+            {/* Left Content Column */}
+            <div className="lg:col-span-6 space-y-6">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-blue-600">Developer API</span>
+                <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-900 mt-3">
+                  Integrate native ads into your content feed in minutes
+                </h2>
+                <p className="text-base sm:text-lg text-gray-500 mt-4 leading-relaxed">
+                  Whether you run a Next.js blog, a React feed, or a custom CMS, our headless delivery API lets you embed seamless sponsored content that perfectly matches your platform&apos;s native design.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-5 bg-gray-50 rounded-xl border border-gray-100 space-y-2">
+                  <div className="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
+                  </div>
+                  <h3 className="text-base font-bold text-gray-900">Headless JSON API</h3>
+                  <p className="text-xs text-gray-500 leading-relaxed">Total control over layout, typography, and placements with lightweight responses.</p>
+                </div>
+                
+                <div className="p-5 bg-gray-50 rounded-xl border border-gray-100 space-y-2">
+                  <div className="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-base font-bold text-gray-900">Automated Attribution</h3>
+                  <p className="text-xs text-gray-500 leading-relaxed">Built-in viewport impression (view) and click tracking with zero ad blockers.</p>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <Link
+                  href="/docs"
+                  className="inline-flex items-center gap-2 px-6 py-3.5 text-base font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all shadow-md hover:shadow-lg active:scale-95"
+                >
+                  <span>View Documentation</span>
+                  <span>&rarr;</span>
+                </Link>
+              </div>
+            </div>
+
+            {/* Right Visual Window (Matching Hero Card Style) */}
+            <div className="lg:col-span-6 relative">
+              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-blue-500/10 to-teal-500/10 blur-xl opacity-70"></div>
+              <div className="relative bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden">
+                <div className="bg-gray-900 px-4 py-3 flex items-center justify-between border-b border-gray-800">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-full bg-red-500 block"></span>
+                    <span className="w-3 h-3 rounded-full bg-yellow-500 block"></span>
+                    <span className="w-3 h-3 rounded-full bg-green-500 block"></span>
+                    <span className="text-xs font-mono text-gray-400 ml-2">feed_ad_integration.ts</span>
+                  </div>
+                  <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-blue-900/60 text-blue-300 border border-blue-700/50">
+                    REST API
+                  </span>
+                </div>
+                
+                <div className="p-6 bg-gray-950 font-mono text-xs text-gray-200 space-y-3 leading-relaxed">
+                  <div className="text-gray-500">// 1. Fetch live native creative variations</div>
+                  <div>
+                    <span className="text-purple-400 font-semibold">const</span>{" "}
+                    <span className="text-blue-300">res</span> ={" "}
+                    <span className="text-purple-400 font-semibold">await</span>{" "}
+                    <span className="text-yellow-300">fetch</span>(
+                    <span className="text-emerald-300">&quot;https://api.yourdomain.com/api/ads/serve&quot;</span>
+                    );
+                  </div>
+                  <div>
+                    <span className="text-purple-400 font-semibold">const</span> [
+                    <span className="text-blue-300">ad</span>] ={" "}
+                    <span className="text-purple-400 font-semibold">await</span>{" "}
+                    <span className="text-blue-300">res</span>.
+                    <span className="text-yellow-300">json</span>();
+                  </div>
+
+                  <div className="pt-2 text-gray-500">// 2. Log impression when 50% visible in viewport</div>
+                  <div>
+                    <span className="text-purple-400 font-semibold">await</span>{" "}
+                    <span className="text-yellow-300">trackEvent</span>({`{`}
+                  </div>
+                  <div className="pl-4 text-emerald-300">
+                    campaignId: <span className="text-orange-300">ad.campaignId</span>,
+                  </div>
+                  <div className="pl-4 text-emerald-300">
+                    adId: <span className="text-orange-300">ad.adId</span>,
+                  </div>
+                  <div className="pl-4 text-emerald-300">
+                    action: <span className="text-amber-200">&quot;view&quot;</span>
+                  </div>
+                  <div>{`}`});</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
       {/* COLLAPSIBLE FAQ SECTION */}
       <section id="faq" className="py-20 bg-gray-50 border-t border-gray-200">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
@@ -422,6 +530,11 @@ export default async function Home() {
           Ad-Module
         </p>
         <ul className="flex flex-wrap items-center gap-y-2 gap-x-8">
+          <li>
+            <Link href="/docs" className="text-blue-600 hover:text-blue-700 font-semibold text-sm transition-colors">
+              Documentation
+            </Link>
+          </li>
           <li>
             <a href="#" className="text-gray-600 hover:text-gray-900 focus:text-gray-900 text-sm transition-colors">
               About Us

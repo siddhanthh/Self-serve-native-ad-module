@@ -5,8 +5,9 @@ import { verifyToken } from '@/lib/auth';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const publicRoutes = ['/', '/login', '/register', '/api/login', '/api/register', '/api/ads/serve', '/api/ads/track'];
-  const isPublicRoute = publicRoutes.includes(pathname);
+  const publicRoutes = ['/', '/docs', '/login', '/register', '/api/login', '/api/register', '/api/ads/serve', '/api/ads/track'];
+  const authRoutes = ['/login', '/register'];
+  const isPublicRoute = publicRoutes.some(route => pathname === route || pathname.startsWith('/docs') || pathname.startsWith('/api/ads/'));
 
   const token = request.cookies.get('auth_token')?.value;
 
@@ -23,15 +24,16 @@ export async function middleware(request: NextRequest) {
       return response;
     }
 
-    if (isPublicRoute && !pathname.startsWith('/api')) {
+    // Only redirect away from login/register if already authenticated
+    if (authRoutes.includes(pathname)) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
-    if (pathname.startsWith('/admin') && payload.role !== 'admin') {
+    if (pathname.startsWith('/admin') && payload.role !== 'admin' && payload.role !== 'superadmin') {
       return NextResponse.redirect(new URL('/dashboard', request.url)); 
     }
     
-    if (pathname.startsWith('/campaigns') && !['admin', 'advertiser'].includes(payload.role as string)) {
+    if (pathname.startsWith('/campaigns') && !['admin', 'superadmin', 'advertiser'].includes(payload.role as string)) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
   }
