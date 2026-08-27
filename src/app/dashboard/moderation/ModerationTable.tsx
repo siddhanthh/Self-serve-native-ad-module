@@ -11,6 +11,7 @@ type AdItem = {
   title: string;
   description: string;
   image_url: string;
+  video_url?: string | null;
   destination_url: string;
   approval_status: string;
   is_active: boolean;
@@ -153,7 +154,20 @@ export default function ModerationTable({ ads, userRole }: { ads: AdItem[], user
                           </div>
 
                           <div className="w-full bg-gray-50 border-y border-gray-100 aspect-video relative flex items-center justify-center overflow-hidden">
-                            <img src={ad.image_url} alt="Preview" className="object-cover w-full h-full" />
+                            {ad.video_url ? (
+                              <video
+                                key={ad.video_url}
+                                src={ad.video_url}
+                                controls
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                                className="object-cover w-full h-full"
+                              />
+                            ) : (
+                              <img src={ad.image_url} alt="Preview" className="object-cover w-full h-full" />
+                            )}
                           </div>
 
                           <div className="p-4 bg-gray-55 flex flex-col gap-3 mt-auto">

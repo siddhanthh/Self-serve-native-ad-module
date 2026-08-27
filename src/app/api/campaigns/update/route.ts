@@ -29,7 +29,7 @@ export async function POST(req: Request) {
       cpcRate,
       cpmRate,
       totalBudget,
-      ads // array of { id?: number, title, description, imageUrl, destinationUrl, ctaText }
+      ads // array of { id?: number, title, description, imageUrl, videoUrl, destinationUrl, ctaText }
     } = body;
 
     if (!id || !companyName || !duration || !ads || !Array.isArray(ads) || ads.length === 0) {
@@ -38,8 +38,14 @@ export async function POST(req: Request) {
 
     // Validate that each ad creative has the required fields
     for (const ad of ads) {
-      if (!ad.title || !ad.description || !ad.imageUrl || !ad.destinationUrl) {
-        return NextResponse.json({ error: 'All ad creatives must contain a title, description, image, and destination URL' }, { status: 400 });
+      if (!ad.title || !ad.description || !ad.destinationUrl) {
+        return NextResponse.json({ error: 'All ad creatives must contain a title, description, and destination URL' }, { status: 400 });
+      }
+      if (!ad.imageUrl && !ad.videoUrl) {
+        return NextResponse.json({ error: 'Each ad creative must have either an image or a video' }, { status: 400 });
+      }
+      if (ad.imageUrl && ad.videoUrl) {
+        return NextResponse.json({ error: 'An ad creative cannot have both an image and a video' }, { status: 400 });
       }
     }
 
@@ -104,7 +110,7 @@ export async function POST(req: Request) {
         if (ad.id) {
           // If editing an existing ad, verify if it was modified. If modified, set approval to pending.
           const existingAdQuery = await client.query(
-            'SELECT title, description, image_url, destination_url, cta_text FROM ads WHERE id = $1',
+            'SELECT title, description, image_url, video_url, destination_url, cta_text FROM ads WHERE id = $1',
             [ad.id]
           );
           const existingAd = existingAdQuery.rows[0];
@@ -112,20 +118,22 @@ export async function POST(req: Request) {
           const isModified = !existingAd ||
             existingAd.title !== ad.title ||
             existingAd.description !== ad.description ||
-            existingAd.image_url !== ad.imageUrl ||
+            existingAd.image_url !== (ad.imageUrl || '') ||
+            existingAd.video_url !== (ad.videoUrl || null) ||
             existingAd.destination_url !== ad.destinationUrl ||
             existingAd.cta_text !== (ad.ctaText || 'Learn More');
 
           const updateAdSql = `
             UPDATE ads
-            SET title = $1, description = $2, image_url = $3, destination_url = $4, cta_text = $5,
-                approval_status = CASE WHEN $6 = TRUE THEN 'pending' ELSE approval_status END
-            WHERE id = $7 AND campaign_id = $8
+            SET title = $1, description = $2, image_url = $3, video_url = $4, destination_url = $5, cta_text = $6,
+                approval_status = CASE WHEN $7 = TRUE THEN 'pending' ELSE approval_status END
+            WHERE id = $8 AND campaign_id = $9
           `;
           await client.query(updateAdSql, [
             ad.title,
             ad.description,
-            ad.imageUrl,
+            ad.imageUrl || '',
+            ad.videoUrl || null,
             ad.destinationUrl,
             ad.ctaText || 'Learn More',
             isModified,
@@ -135,14 +143,15 @@ export async function POST(req: Request) {
         } else {
           // If it is a new ad, insert it as pending
           const insertAdSql = `
-            INSERT INTO ads (campaign_id, title, description, image_url, destination_url, cta_text, approval_status, is_active)
-            VALUES ($1, $2, $3, $4, $5, $6, 'pending', TRUE)
+            INSERT INTO ads (campaign_id, title, description, image_url, video_url, destination_url, cta_text, approval_status, is_active)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', TRUE)
           `;
           await client.query(insertAdSql, [
             id,
             ad.title,
             ad.description,
-            ad.imageUrl,
+            ad.imageUrl || '',
+            ad.videoUrl || null,
             ad.destinationUrl,
             ad.ctaText || 'Learn More'
           ]);

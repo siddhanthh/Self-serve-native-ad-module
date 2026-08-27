@@ -49,9 +49,8 @@ export default function DocsClient() {
     "authorName": "SaaS Pulse Inc.",
     "advertiserLogo": "https://ui-avatars.com/api/?name=SaaS+Pulse+Inc.&background=random",
     "content": "Scale your cloud infrastructure with zero downtime. Get $200 in free credits today.",
-    "images": [
-      "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800"
-    ],
+    "images": [],
+    "videoUrl": "https://example.com/videos/saas-pulse-ad.mp4",
     "ctaText": "Sign Up",
     "targetUrl": "https://example.com/signup?ref=partner",
     "adId": 14,
@@ -69,6 +68,7 @@ export interface NativeAd {
   advertiserLogo: string;
   content: string;
   images: string[];
+  videoUrl?: string;
   ctaText: string;
   targetUrl: string;
   adId: number;
@@ -79,7 +79,9 @@ const AD_SERVER_URL = "https://your-ad-module-domain.com";
 
 export function NativeAdCard({ ad }: { ad: NativeAd }) {
   const adRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const viewTrackedRef = useRef(false);
+  const quartilesTracked = useRef({ q1: false, q2: false, q3: false, complete: false });
 
   // 1. Track "serve" event on initial mount
   useEffect(() => {
@@ -106,8 +108,62 @@ export function NativeAdCard({ ad }: { ad: NativeAd }) {
     return () => observer.disconnect();
   }, [ad.campaignId, ad.adId]);
 
-  // 3. Track "click" event when user clicks the card or CTA
-  const handleClick = () => {
+  // 3. Track video playback progression (quartiles & play events)
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    let playTracked = false;
+
+    const handlePlay = () => {
+      if (!playTracked) {
+        playTracked = true;
+        trackAdEvent(ad.campaignId, ad.adId, "video_start", { durationWatched: 0 });
+      }
+    };
+
+    const handleTimeUpdate = () => {
+      if (!video.duration) return;
+      const progress = video.currentTime / video.duration;
+
+      if (progress >= 0.25 && !quartilesTracked.current.q1) {
+        quartilesTracked.current.q1 = true;
+        trackAdEvent(ad.campaignId, ad.adId, "video_quartile_25", { durationWatched: video.currentTime });
+      }
+      if (progress >= 0.50 && !quartilesTracked.current.q2) {
+        quartilesTracked.current.q2 = true;
+        trackAdEvent(ad.campaignId, ad.adId, "video_quartile_50", { durationWatched: video.currentTime });
+      }
+      if (progress >= 0.75 && !quartilesTracked.current.q3) {
+        quartilesTracked.current.q3 = true;
+        trackAdEvent(ad.campaignId, ad.adId, "video_quartile_75", { durationWatched: video.currentTime });
+      }
+    };
+
+    const handleEnded = () => {
+      if (!quartilesTracked.current.complete) {
+        quartilesTracked.current.complete = true;
+        trackAdEvent(ad.campaignId, ad.adId, "video_complete", { durationWatched: video.duration });
+      }
+    };
+
+    video.addEventListener("play", handlePlay);
+    video.addEventListener("timeupdate", handleTimeUpdate);
+    video.addEventListener("ended", handleEnded);
+
+    return () => {
+      video.removeEventListener("play", handlePlay);
+      video.removeEventListener("timeupdate", handleTimeUpdate);
+      video.removeEventListener("ended", handleEnded);
+    };
+  }, [ad.campaignId, ad.adId, ad.videoUrl]);
+
+  // 4. Track "click" event when user clicks the card or CTA
+  const handleClick = (e: React.MouseEvent) => {
+    // Avoid triggering redirect if user is interacting with video controls
+    if (e.target instanceof HTMLVideoElement || (e.target as HTMLElement).closest("video")) {
+      return;
+    }
     trackAdEvent(ad.campaignId, ad.adId, "click");
     window.open(ad.targetUrl, "_blank", "noopener,noreferrer");
   };
@@ -132,13 +188,21 @@ export function NativeAdCard({ ad }: { ad: NativeAd }) {
         </span>
       </div>
 
-      {ad.images?.[0] && (
+      {ad.videoUrl ? (
+        <video
+          ref={videoRef}
+          src={ad.videoUrl}
+          controls
+          muted
+          className="w-full h-44 object-cover rounded-lg mb-3"
+        />
+      ) : ad.images?.[0] ? (
         <img
           src={ad.images[0]}
           alt={ad.authorName}
           className="w-full h-44 object-cover rounded-lg mb-3"
         />
-      )}
+      ) : null}
 
       <p className="text-sm text-gray-700 mb-3">{ad.content}</p>
 
@@ -158,13 +222,14 @@ export function NativeAdCard({ ad }: { ad: NativeAd }) {
 export async function trackAdEvent(
   campaignId: number,
   adId: number,
-  action: "serve" | "view" | "click"
+  action: string,
+  metadata?: Record<string, any>
 ) {
   try {
     await fetch(\`\${AD_SERVER_URL}/api/ads/track\`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ campaignId, adId, action }),
+      body: JSON.stringify({ campaignId, adId, action, metadata }),
     });
   } catch (err) {
     console.error("Ad Tracking Error:", err);
@@ -178,12 +243,12 @@ export async function trackAdEvent(
   const AD_SERVER_URL = "https://your-ad-module-domain.com";
 
   // Tracking Helper
-  async function trackAdEvent(campaignId, adId, action) {
+  async function trackAdEvent(campaignId, adId, action, metadata) {
     try {
       await fetch(\`\${AD_SERVER_URL}/api/ads/track\`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ campaignId, adId, action })
+        body: JSON.stringify({ campaignId, adId, action, metadata })
       });
     } catch (e) {
       console.error("Tracking error", e);
@@ -209,7 +274,11 @@ export async function trackAdEvent(
             </div>
             <span style="font-size: 10px; background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-weight: bold; color: #4b5563;">Sponsored</span>
           </div>
-          \${ad.images[0] ? \`<img src="\${ad.images[0]}" style="width: 100%; height: 180px; object-fit: cover; border-radius: 8px; margin-bottom: 8px;" />\` : ''}
+          \${ad.videoUrl 
+            ? \`<video id="ad-video-\${ad.adId}" src="\${ad.videoUrl}" controls muted style="width: 100%; height: 180px; object-fit: cover; border-radius: 8px; margin-bottom: 8px;"></video>\` 
+            : ad.images[0] 
+              ? \`<img src="\${ad.images[0]}" style="width: 100%; height: 180px; object-fit: cover; border-radius: 8px; margin-bottom: 8px;" />\` 
+              : ''}
           <p style="font-size: 14px; color: #374151; margin-bottom: 12px;">\${ad.content}</p>
           <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f3f4f6; padding-top: 8px;">
             <span style="font-size: 12px; color: #9ca3af;">\${new URL(ad.targetUrl).hostname}</span>
@@ -223,14 +292,53 @@ export async function trackAdEvent(
       // 1. Track Serve
       trackAdEvent(ad.campaignId, ad.adId, "serve");
 
-      // 2. Track Click
+      // 2. Track Video Progression if video exists
+      const video = document.getElementById(\`ad-video-\${ad.adId}\`);
+      if (video) {
+        let playTracked = false;
+        let q1 = false, q2 = false, q3 = false, complete = false;
+
+        video.addEventListener("play", () => {
+          if (!playTracked) {
+            playTracked = true;
+            trackAdEvent(ad.campaignId, ad.adId, "video_start", { durationWatched: 0 });
+          }
+        });
+
+        video.addEventListener("timeupdate", () => {
+          if (!video.duration) return;
+          const progress = video.currentTime / video.duration;
+          if (progress >= 0.25 && !q1) {
+            q1 = true;
+            trackAdEvent(ad.campaignId, ad.adId, "video_quartile_25", { durationWatched: video.currentTime });
+          }
+          if (progress >= 0.50 && !q2) {
+            q2 = true;
+            trackAdEvent(ad.campaignId, ad.adId, "video_quartile_50", { durationWatched: video.currentTime });
+          }
+          if (progress >= 0.75 && !q3) {
+            q3 = true;
+            trackAdEvent(ad.campaignId, ad.adId, "video_quartile_75", { durationWatched: video.currentTime });
+          }
+        });
+
+        video.addEventListener("ended", () => {
+          if (!complete) {
+            complete = true;
+            trackAdEvent(ad.campaignId, ad.adId, "video_complete", { durationWatched: video.duration });
+          }
+        });
+      }
+
+      // 3. Track Click (but ignore click if clicking on video element)
       const card = document.getElementById(\`ad-card-\${ad.adId}\`);
-      card.addEventListener("click", () => {
+      card.addEventListener("click", (e) => {
+        if (e.target.tagName === 'VIDEO' || e.target.closest('video')) return;
         trackAdEvent(ad.campaignId, ad.adId, "click");
         window.open(ad.targetUrl, "_blank");
       });
 
-      // 3. Track View (Intersection Observer)
+      // 4. Track View (Intersection Observer)
       let viewed = false;
       const observer = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting && !viewed) {
@@ -477,6 +585,11 @@ export async function trackAdEvent(
                         <td className="p-3 font-mono font-bold text-blue-600">images</td>
                         <td className="p-3 font-mono text-gray-500">string[]</td>
                         <td className="p-3">Array of creative image URLs (16:9 / 4:3 high-res).</td>
+                      </tr>
+                      <tr>
+                        <td className="p-3 font-mono font-bold text-blue-600">videoUrl</td>
+                        <td className="p-3 font-mono text-gray-500">string</td>
+                        <td className="p-3">Optional creative video URL (.mp4, etc.). If present, publishers should render a video player instead of an image.</td>
                       </tr>
                       <tr>
                         <td className="p-3 font-mono font-bold text-blue-600">ctaText</td>

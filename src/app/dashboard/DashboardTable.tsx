@@ -9,7 +9,8 @@ type Ad = {
   id: number;
   title: string;
   description: string;
-  image_url: string;
+  image_url?: string;
+  video_url?: string | null;
   destination_url: string;
   cta_text: string;
   approval_status: string;
@@ -31,7 +32,19 @@ type Campaign = {
   ads?: Ad[];
 };
 
-type EventMap = Record<number, { serve: number; view: number; click: number }>;
+type EventMap = Record<
+  number,
+  {
+    serve: number;
+    view: number;
+    click: number;
+    videoStart?: number;
+    videoQ1?: number;
+    videoQ2?: number;
+    videoQ3?: number;
+    videoComplete?: number;
+  }
+>;
 type TimelineMap = Record<number, Array<{ date: string; serve: number; view: number; click: number; spend: number }>>;
 
 export default function DashboardTable({
@@ -250,7 +263,20 @@ export default function DashboardTable({
                                 </div>
 
                                 <div className="w-full bg-gray-50 border-y border-gray-100 aspect-video relative flex items-center justify-center overflow-hidden">
-                                  <img src={currentPreviewAd.image_url} alt="Preview" className="object-cover w-full h-full" />
+                                  {currentPreviewAd.video_url ? (
+                                    <video
+                                      key={currentPreviewAd.video_url}
+                                      src={currentPreviewAd.video_url}
+                                      controls
+                                      autoPlay
+                                      loop
+                                      muted
+                                      playsInline
+                                      className="object-cover w-full h-full"
+                                    />
+                                  ) : (
+                                    <img src={currentPreviewAd.image_url} alt="Preview" className="object-cover w-full h-full" />
+                                  )}
                                 </div>
 
                                 <div className="p-4 bg-gray-55 flex flex-col gap-3">
@@ -287,11 +313,45 @@ export default function DashboardTable({
                                 <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Clicks</div>
                                 <div className="text-xl font-black text-green-600 font-mono">{stats.click.toLocaleString('en-IN')}</div>
                               </div>
+
                               <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
                                 <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">CTR</div>
                                 <div className="text-xl font-black text-blue-600 font-mono">{ctr}</div>
                               </div>
                             </div>
+
+                            {/* Video Engagement Metrics if currently previewed ad is a video */}
+                            {currentPreviewAd?.video_url && (
+                              <div className="mt-4 pt-4 border-t border-gray-200 space-y-3">
+                                <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider">Video Engagement</h4>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                  <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                                    <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Video Starts</div>
+                                    <div className="text-xl font-black text-gray-900 font-mono">{(stats.videoStart || 0).toLocaleString('en-IN')}</div>
+                                  </div>
+                                  <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                                    <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Completions</div>
+                                    <div className="text-xl font-black text-green-600 font-mono">{(stats.videoComplete || 0).toLocaleString('en-IN')}</div>
+                                  </div>
+                                  <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                                    <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Completion Rate</div>
+                                    <div className="text-xl font-black text-blue-600 font-mono">
+                                      {stats.videoStart && stats.videoStart > 0 
+                                        ? (((stats.videoComplete || 0) / stats.videoStart) * 100).toFixed(1) + "%" 
+                                        : "0.0%"}
+                                    </div>
+                                  </div>
+                                  <div className="bg-white p-4 rounded-xl border border-gray-205 shadow-sm">
+                                    <div className="text-[10px] font-bold text-gray-550 uppercase tracking-wider mb-1.5">Progression Quartiles</div>
+                                    <div className="text-[11px] font-medium text-gray-600 space-y-1">
+                                      <div className="flex justify-between"><span>25% View:</span> <strong className="font-mono">{stats.videoQ1 || 0}</strong></div>
+                                      <div className="flex justify-between"><span>50% View:</span> <strong className="font-mono">{stats.videoQ2 || 0}</strong></div>
+                                      <div className="flex justify-between"><span>75% View:</span> <strong className="font-mono">{stats.videoQ3 || 0}</strong></div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
 
                             {/* Financials Row */}
                             {(campaign.cpc_rate !== undefined || campaign.cpm_rate !== undefined) && (

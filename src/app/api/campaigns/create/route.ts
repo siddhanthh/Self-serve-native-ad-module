@@ -28,7 +28,7 @@ export async function POST(req: Request) {
       cpcRate,
       cpmRate,
       totalBudget,
-      ads // array of { title, description, imageUrl, destinationUrl, ctaText }
+      ads // array of { title, description, imageUrl, videoUrl, destinationUrl, ctaText }
     } = body;
 
     if (!companyName || !duration || !ads || !Array.isArray(ads) || ads.length === 0) {
@@ -37,8 +37,14 @@ export async function POST(req: Request) {
 
     // Validate that each ad creative has the required fields
     for (const ad of ads) {
-      if (!ad.title || !ad.description || !ad.imageUrl || !ad.destinationUrl) {
-        return NextResponse.json({ error: 'All ad creatives must contain a title, description, image, and destination URL' }, { status: 400 });
+      if (!ad.title || !ad.description || !ad.destinationUrl) {
+        return NextResponse.json({ error: 'All ad creatives must contain a title, description, and destination URL' }, { status: 400 });
+      }
+      if (!ad.imageUrl && !ad.videoUrl) {
+        return NextResponse.json({ error: 'Each ad creative must have either an image or a video' }, { status: 400 });
+      }
+      if (ad.imageUrl && ad.videoUrl) {
+        return NextResponse.json({ error: 'An ad creative cannot have both an image and a video' }, { status: 400 });
       }
     }
 
@@ -72,8 +78,8 @@ export async function POST(req: Request) {
 
       // Bulk-insert the ad creatives
       const adSql = `
-        INSERT INTO ads (campaign_id, title, description, image_url, destination_url, cta_text, approval_status, is_active)
-        VALUES ($1, $2, $3, $4, $5, $6, 'pending', TRUE);
+        INSERT INTO ads (campaign_id, title, description, image_url, video_url, destination_url, cta_text, approval_status, is_active)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', TRUE);
       `;
 
       for (const ad of ads) {
@@ -81,7 +87,8 @@ export async function POST(req: Request) {
           campaignId,
           ad.title,
           ad.description,
-          ad.imageUrl,
+          ad.imageUrl || '',
+          ad.videoUrl || null,
           ad.destinationUrl,
           ad.ctaText || 'Learn More'
         ]);

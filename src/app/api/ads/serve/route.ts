@@ -14,7 +14,7 @@ export async function GET(req: Request) {
 
   try {
     const { rows: ads } = await query(`
-      SELECT a.id as ad_id, c.id as campaign_id, c.company_name, a.title, a.description, a.image_url, a.destination_url, a.cta_text 
+      SELECT a.id as ad_id, c.id as campaign_id, c.company_name, a.title, a.description, a.image_url, a.video_url, a.destination_url, a.cta_text 
       FROM ads a
       JOIN campaigns c ON a.campaign_id = c.id
       LEFT JOIN campaign_finances cf ON c.id = cf.campaign_id
@@ -34,7 +34,8 @@ export async function GET(req: Request) {
       authorName: ad.company_name !== 'N/A' ? ad.company_name : ad.title,
       advertiserLogo: "https://ui-avatars.com/api/?name=" + encodeURIComponent(ad.company_name || 'Ad') + "&background=random", 
       content: ad.description,
-      images: [ad.image_url], 
+      images: ad.image_url ? [ad.image_url] : [], 
+      videoUrl: ad.video_url || undefined,
       ctaText: ad.cta_text || "Learn More",  
       targetUrl: ad.destination_url,
       adId: ad.ad_id,

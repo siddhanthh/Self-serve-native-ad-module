@@ -21,7 +21,7 @@ export default async function ModerationPage() {
 
   // Fetch ALL ads for the audit log, ordered by newest first
   const { rows: allAds } = await query(
-    `SELECT a.id, a.campaign_id, c.company_name, a.title, a.description, a.image_url, a.destination_url, a.cta_text, a.approval_status, a.is_active,
+    `SELECT a.id, a.campaign_id, c.company_name, a.title, a.description, a.image_url, a.video_url, a.destination_url, a.cta_text, a.approval_status, a.is_active,
             c.start_date, c.end_date, c.user_id, cf.billing_type, cf.cpc_rate, cf.cpm_rate, cf.total_budget, cf.spent_amount 
      FROM ads a
      JOIN campaigns c ON a.campaign_id = c.id

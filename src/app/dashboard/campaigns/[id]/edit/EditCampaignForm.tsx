@@ -8,7 +8,8 @@ interface Ad {
   id?: number;
   title: string;
   description: string;
-  image_url: string;
+  image_url?: string;
+  video_url?: string | null;
   destination_url: string;
   cta_text?: string;
 }
@@ -49,6 +50,7 @@ export default function EditCampaignForm({ campaign }: { campaign: Campaign }) {
       title: ad.title,
       description: ad.description,
       imageUrl: ad.image_url,
+      videoUrl: ad.video_url || undefined,
       destinationUrl: ad.destination_url,
       ctaText: ad.cta_text || "Learn More"
     }))

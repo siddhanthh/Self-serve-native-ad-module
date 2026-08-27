@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import React from "react";
 
@@ -8,7 +8,8 @@ export interface AdCreative {
   id?: number;
   title: string;
   description: string;
-  imageUrl: string;
+  imageUrl?: string;
+  videoUrl?: string;
   destinationUrl: string;
   ctaText: string;
 }
@@ -49,14 +50,31 @@ export default function CampaignForm({
 
   // Multiple Ad Creatives State
   const [ads, setAds] = useState<AdCreative[]>(initialData?.ads && initialData.ads.length > 0 ? initialData.ads : [
-    { title: "", description: "", imageUrl: "", destinationUrl: "", ctaText: "Learn More" }
+    { title: "", description: "", imageUrl: "", videoUrl: "", destinationUrl: "", ctaText: "Learn More" }
   ]);
 
   // Selected Ad index for Tab & Live Preview
   const [activeAdIndex, setActiveAdIndex] = useState<number>(0);
 
+  // Debounced preview URL — only updates 500ms after user stops typing
+  const [previewMediaUrl, setPreviewMediaUrl] = useState<string>("");
+  const [previewIsVideo, setPreviewIsVideo] = useState<boolean>(false);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const rawMediaUrl = ads[activeAdIndex]?.videoUrl || ads[activeAdIndex]?.imageUrl || "";
+  const rawIsVideo = Boolean(ads[activeAdIndex]?.videoUrl);
+
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      setPreviewMediaUrl(rawMediaUrl);
+      setPreviewIsVideo(rawIsVideo);
+    }, 500);
+    return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); };
+  }, [rawMediaUrl, rawIsVideo]);
+
   const handleAddAd = () => {
-    const newAds = [...ads, { title: "", description: "", imageUrl: "", destinationUrl: "", ctaText: "Learn More" }];
+    const newAds = [...ads, { title: "", description: "", imageUrl: "", videoUrl: "", destinationUrl: "", ctaText: "Learn More" }];
     setAds(newAds);
     setActiveAdIndex(newAds.length - 1);
   };
@@ -94,12 +112,31 @@ export default function CampaignForm({
     setAds(updated);
   };
 
+  const handleUpdateCurrentAdMedia = (value: string) => {
+    const isVideo = Boolean(value.match(/\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i) || value.toLowerCase().includes("video") || value.toLowerCase().includes(".mp4"));
+    const updated = ads.map((ad, idx) => {
+      if (idx === activeAdIndex) {
+        if (isVideo) {
+          return { ...ad, videoUrl: value, imageUrl: "" };
+        } else {
+          return { ...ad, imageUrl: value, videoUrl: "" };
+        }
+      }
+      return ad;
+    });
+    setAds(updated);
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     // Validate that all ads have basic requirements
-    const hasIncompleteAd = ads.some((ad) => !ad.title || !ad.description || !ad.imageUrl || !ad.destinationUrl);
+    const hasIncompleteAd = ads.some((ad) => {
+      const baseReq = !ad.title || !ad.description || !ad.destinationUrl;
+      const mediaReq = !ad.imageUrl && !ad.videoUrl;
+      return baseReq || mediaReq;
+    });
     if (hasIncompleteAd) {
-      alert("Please ensure all ad variations have a Title, Description, Image URL, and Destination URL.");
+      alert("Please ensure all ad variations have a Title, Description, Destination URL, and a valid Media URL (Image or Video).");
       return;
     }
 
@@ -114,7 +151,7 @@ export default function CampaignForm({
     });
   };
 
-  const currentAd = ads[activeAdIndex] || { title: "", description: "", imageUrl: "", destinationUrl: "", ctaText: "Learn More" };
+  const currentAd = ads[activeAdIndex] || { title: "", description: "", imageUrl: "", videoUrl: "", destinationUrl: "", ctaText: "Learn More" };
 
   const parsedBudget = parseFloat(totalBudget) || 0;
   const parsedDuration = parseInt(duration) || 7;
@@ -294,7 +331,7 @@ export default function CampaignForm({
               <div className="px-6 pt-4 pb-2 border-b border-gray-100 bg-white">
                 <div className="flex items-center gap-2 overflow-x-auto pb-2">
                   {ads.map((ad, idx) => {
-                    const isComplete = Boolean(ad.title && ad.description && ad.imageUrl && ad.destinationUrl);
+                    const isComplete = Boolean(ad.title && ad.description && (ad.imageUrl || ad.videoUrl) && ad.destinationUrl);
                     const isActive = activeAdIndex === idx;
                     return (
                       <div
@@ -401,34 +438,35 @@ export default function CampaignForm({
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                      Creative Image URL <span className="text-red-500">*</span>
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Creative Media URL <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="url"
-                      required
-                      value={currentAd.imageUrl}
-                      onChange={(e) => handleUpdateCurrentAd("imageUrl", e.target.value)}
-                      placeholder="https://images.unsplash.com/..."
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white placeholder-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all"
-                    />
+                    <span className="text-[11px] text-gray-400">Image or Video URL (.mp4, .webm, .jpg, .png, etc.)</span>
                   </div>
+                  <input
+                    type="url"
+                    required
+                    value={currentAd.videoUrl || currentAd.imageUrl || ""}
+                    onChange={(e) => handleUpdateCurrentAdMedia(e.target.value)}
+                    placeholder="https://example.com/media.jpg or https://example.com/video.mp4"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white placeholder-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all"
+                  />
+                </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                      Destination Landing URL <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="url"
-                      required
-                      value={currentAd.destinationUrl}
-                      onChange={(e) => handleUpdateCurrentAd("destinationUrl", e.target.value)}
-                      placeholder="https://yourwebsite.com/promo"
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white placeholder-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                    Destination Landing URL <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="url"
+                    required
+                    value={currentAd.destinationUrl}
+                    onChange={(e) => handleUpdateCurrentAd("destinationUrl", e.target.value)}
+                    placeholder="https://yourwebsite.com/promo"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white placeholder-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all"
+                  />
                 </div>
 
                 <div>
@@ -499,11 +537,23 @@ export default function CampaignForm({
 
           {/* Ad Mockup Card */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-xl overflow-hidden group hover:border-blue-400 transition-all max-w-sm mx-auto">
-            {/* Image Banner */}
+            {/* Media Banner (Image or Video) */}
             <div className="h-48 bg-linear-to-br from-gray-100 to-gray-200 w-full relative border-b border-gray-100 flex items-center justify-center overflow-hidden">
-              {currentAd.imageUrl ? (
+              {previewIsVideo && previewMediaUrl ? (
+                <video
+                  key={previewMediaUrl}
+                  src={previewMediaUrl}
+                  controls
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload="auto"
+                  className="w-full h-full object-cover"
+                />
+              ) : previewMediaUrl ? (
                 <img
-                  src={currentAd.imageUrl}
+                  src={previewMediaUrl}
                   alt="Ad Creative"
                   className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
                   onError={(e) => {
@@ -515,7 +565,7 @@ export default function CampaignForm({
                   <svg className="w-10 h-10 text-gray-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  <span className="text-gray-400 text-xs font-medium">Add Image URL to Preview</span>
+                  <span className="text-gray-400 text-xs font-medium">Add Image/Video URL to Preview</span>
                 </div>
               )}
               <div className="absolute top-2.5 right-2.5 bg-black/70 backdrop-blur-md text-white text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider shadow-xs">

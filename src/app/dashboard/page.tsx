@@ -6,7 +6,15 @@ import Link from "next/link";
 import DashboardTable from "./DashboardTable";
 import AdminOverview from "./AdminOverview";
 
-export default async function DashboardOverview() {
+interface PageProps {
+  searchParams: Promise<{ page?: string }>;
+}
+
+export default async function DashboardOverview({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const currentPage = Math.max(1, parseInt(params.page || "1", 10));
+  const pageSize = 10;
+  const offset = (currentPage - 1) * pageSize;
   const cookieStore = await cookies();
   const token = cookieStore.get("auth_token")?.value;
 
@@ -69,13 +77,23 @@ export default async function DashboardOverview() {
     ? `SELECT ce.campaign_id,
          SUM(CASE WHEN ce.event_type = 'serve' THEN 1 ELSE 0 END)::int as serve_count,
          SUM(CASE WHEN ce.event_type = 'view' THEN 1 ELSE 0 END)::int as view_count,
-         SUM(CASE WHEN ce.event_type = 'click' THEN 1 ELSE 0 END)::int as click_count
+         SUM(CASE WHEN ce.event_type = 'click' THEN 1 ELSE 0 END)::int as click_count,
+         SUM(CASE WHEN ce.event_type = 'video_start' THEN 1 ELSE 0 END)::int as video_start_count,
+         SUM(CASE WHEN ce.event_type = 'video_quartile_25' THEN 1 ELSE 0 END)::int as video_q1_count,
+         SUM(CASE WHEN ce.event_type = 'video_quartile_50' THEN 1 ELSE 0 END)::int as video_q2_count,
+         SUM(CASE WHEN ce.event_type = 'video_quartile_75' THEN 1 ELSE 0 END)::int as video_q3_count,
+         SUM(CASE WHEN ce.event_type = 'video_complete' THEN 1 ELSE 0 END)::int as video_complete_count
        FROM campaign_events ce
        GROUP BY ce.campaign_id`
     : `SELECT ce.campaign_id,
          SUM(CASE WHEN ce.event_type = 'serve' THEN 1 ELSE 0 END)::int as serve_count,
          SUM(CASE WHEN ce.event_type = 'view' THEN 1 ELSE 0 END)::int as view_count,
-         SUM(CASE WHEN ce.event_type = 'click' THEN 1 ELSE 0 END)::int as click_count
+         SUM(CASE WHEN ce.event_type = 'click' THEN 1 ELSE 0 END)::int as click_count,
+         SUM(CASE WHEN ce.event_type = 'video_start' THEN 1 ELSE 0 END)::int as video_start_count,
+         SUM(CASE WHEN ce.event_type = 'video_quartile_25' THEN 1 ELSE 0 END)::int as video_q1_count,
+         SUM(CASE WHEN ce.event_type = 'video_quartile_50' THEN 1 ELSE 0 END)::int as video_q2_count,
+         SUM(CASE WHEN ce.event_type = 'video_quartile_75' THEN 1 ELSE 0 END)::int as video_q3_count,
+         SUM(CASE WHEN ce.event_type = 'video_complete' THEN 1 ELSE 0 END)::int as video_complete_count
        FROM campaign_events ce
        JOIN campaigns c ON ce.campaign_id = c.id
        WHERE c.user_id = $1
@@ -119,12 +137,26 @@ export default async function DashboardOverview() {
   });
 
   // Build per-campaign event metrics map
-  const eventMap: Record<number, { serve: number; view: number; click: number }> = {};
+  const eventMap: Record<number, { 
+    serve: number; 
+    view: number; 
+    click: number;
+    videoStart: number;
+    videoQ1: number;
+    videoQ2: number;
+    videoQ3: number;
+    videoComplete: number;
+  }> = {};
   campaignEvents.forEach((row) => {
     eventMap[row.campaign_id] = {
       serve: row.serve_count || 0,
       view: row.view_count || 0,
       click: row.click_count || 0,
+      videoStart: row.video_start_count || 0,
+      videoQ1: row.video_q1_count || 0,
+      videoQ2: row.video_q2_count || 0,
+      videoQ3: row.video_q3_count || 0,
+      videoComplete: row.video_complete_count || 0,
     };
   });
 
