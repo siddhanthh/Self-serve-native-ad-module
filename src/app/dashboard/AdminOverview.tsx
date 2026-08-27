@@ -97,7 +97,7 @@ export default function AdminOverview({
         <div className="flex gap-2">
           <Link
             href="/dashboard/moderation"
-            className="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all shadow-sm active:scale-95 cursor-pointer"
+            className="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all shadow-sm active:scale-95 cursor-pointer"
           >
             Go to Campaign Approval
           </Link>

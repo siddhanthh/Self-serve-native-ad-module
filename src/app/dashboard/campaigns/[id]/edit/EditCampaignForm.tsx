@@ -97,6 +97,8 @@ export default function EditCampaignForm({ campaign }: { campaign: Campaign }) {
       isSubmitting={isSubmitting}
       titleText="Edit Campaign"
       subtitleText="Updates will require approval from a moderator."
+      isEdit={true}
+      campaignId={campaign.id}
     />
   );
 }

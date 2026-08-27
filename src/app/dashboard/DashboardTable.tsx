@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import React from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import AdPreviewCard from "@/components/AdPreviewCard";
 
 type Ad = {
   id: number;
@@ -183,7 +184,17 @@ export default function DashboardTable({
                           
                           {/* Creative Selection Panel & Preview */}
                           <div className="w-full xl:w-[48%] space-y-4">
-                            <h3 className="font-semibold text-gray-900 border-b border-gray-200 pb-2">Ad Creatives</h3>
+                            <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+                              <h3 className="font-semibold text-gray-900">Ad Creatives</h3>
+                              {(!currentUserId || campaign.user_id === currentUserId) && (
+                                <Link
+                                  href={`/dashboard/ads/new?campaignId=${campaign.id}`}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-all shadow-2xs"
+                                >
+                                  + Add Creative
+                                </Link>
+                              )}
+                            </div>
                             
                             {/* Creatives List Table */}
                             <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
@@ -234,65 +245,35 @@ export default function DashboardTable({
                                               : "Paused"}
                                         </button>
                                       </td>
-                                      <td className="px-4 py-3 text-right text-blue-600 font-bold">Select</td>
+                                      <td className="px-4 py-3 text-right flex items-center justify-end gap-3.5 font-bold">
+                                        {(!currentUserId || campaign.user_id === currentUserId) && (
+                                          <Link
+                                            href={`/dashboard/ads/${ad.id}/edit`}
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="text-xs text-blue-600 hover:text-blue-700"
+                                          >
+                                            Edit
+                                          </Link>
+                                        )}
+                                        <span className="text-blue-600 text-xs">Select</span>
+                                      </td>
                                     </tr>
                                   ))}
                                 </tbody>
                               </table>
                             </div>
 
-                            {/* Render Preview Card */}
+                            {/* Render Preview Card using reusable component */}
                             {currentPreviewAd && (
-                              <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm flex flex-col max-w-sm mx-auto">
-                                <div className="p-4 flex items-center justify-between border-b border-gray-50">
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
-                                      {(campaign.company_name || "").charAt(0).toUpperCase()}
-                                    </div>
-                                    <div>
-                                      <h4 className="font-bold text-gray-900 text-xs">{campaign.company_name || ""}</h4>
-                                      <p className="text-[9px] text-gray-400 uppercase tracking-wider">Sponsored</p>
-                                    </div>
-                                  </div>
-                                </div>
-                                
-                                <div className="px-4 py-2">
-                                  <p className="text-xs text-gray-800 leading-relaxed">
-                                    <span className="font-bold text-gray-900">{currentPreviewAd.title}</span> — {currentPreviewAd.description}
-                                  </p>
-                                </div>
-
-                                <div className="w-full bg-gray-50 border-y border-gray-100 aspect-video relative flex items-center justify-center overflow-hidden">
-                                  {currentPreviewAd.video_url ? (
-                                    <video
-                                      key={currentPreviewAd.video_url}
-                                      src={currentPreviewAd.video_url}
-                                      controls
-                                      autoPlay
-                                      loop
-                                      muted
-                                      playsInline
-                                      className="object-cover w-full h-full"
-                                    />
-                                  ) : (
-                                    <img src={currentPreviewAd.image_url} alt="Preview" className="object-cover w-full h-full" />
-                                  )}
-                                </div>
-
-                                <div className="p-4 bg-gray-55 flex flex-col gap-3">
-                                  <div className="flex items-center justify-between">
-                                    <div className="text-[10px] text-gray-500 truncate pr-4">
-                                      {(() => {
-                                        try { return new URL(currentPreviewAd.destination_url).hostname; }
-                                        catch { return currentPreviewAd.destination_url; }
-                                      })()}
-                                    </div>
-                                  </div>
-                                  <div className="w-full py-2 bg-blue-600 text-white font-semibold text-xs rounded-lg flex items-center justify-center shadow-sm">
-                                    {currentPreviewAd.cta_text || 'Learn More'}
-                                  </div>
-                                </div>
-                              </div>
+                              <AdPreviewCard
+                                companyName={campaign.company_name}
+                                title={currentPreviewAd.title}
+                                description={currentPreviewAd.description}
+                                mediaUrl={currentPreviewAd.video_url || currentPreviewAd.image_url}
+                                isVideo={Boolean(currentPreviewAd.video_url)}
+                                destinationUrl={currentPreviewAd.destination_url}
+                                ctaText={currentPreviewAd.cta_text}
+                              />
                             )}
                           </div>
 
@@ -342,7 +323,7 @@ export default function DashboardTable({
                                     </div>
                                   </div>
                                   <div className="bg-white p-4 rounded-xl border border-gray-205 shadow-sm">
-                                    <div className="text-[10px] font-bold text-gray-550 uppercase tracking-wider mb-1.5">Progression Quartiles</div>
+                                    <div className="text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">Progression Quartiles</div>
                                     <div className="text-[11px] font-medium text-gray-600 space-y-1">
                                       <div className="flex justify-between"><span>25% View:</span> <strong className="font-mono">{stats.videoQ1 || 0}</strong></div>
                                       <div className="flex justify-between"><span>50% View:</span> <strong className="font-mono">{stats.videoQ2 || 0}</strong></div>

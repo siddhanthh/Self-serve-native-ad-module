@@ -16,6 +16,11 @@ export const navConfig: NavItem[] = [
     roles: ['admin', 'advertiser','superadmin'],
   },
   {
+    title: 'Create ad',
+    href: '/dashboard/ads/new',
+    roles: ['admin', 'advertiser', 'superadmin'],
+  },
+  {
     title: 'Approve campaigns',
     href: '/dashboard/moderation',
     roles: ['admin', 'superadmin'], 

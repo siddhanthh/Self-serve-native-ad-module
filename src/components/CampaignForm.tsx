@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import React from "react";
+import AdPreviewCard from "./AdPreviewCard";
+import AdCreativeFormFields, { AdCreativeValues } from "./AdCreativeFormFields";
 
 export interface AdCreative {
   id?: number;
@@ -12,6 +14,7 @@ export interface AdCreative {
   videoUrl?: string;
   destinationUrl: string;
   ctaText: string;
+  approval_status?: string;
 }
 
 export interface CampaignData {
@@ -31,6 +34,8 @@ interface CampaignFormProps {
   isSubmitting: boolean;
   titleText: string;
   subtitleText: string;
+  isEdit?: boolean;
+  campaignId?: number;
 }
 
 export default function CampaignForm({
@@ -40,6 +45,8 @@ export default function CampaignForm({
   isSubmitting,
   titleText,
   subtitleText,
+  isEdit = false,
+  campaignId,
 }: CampaignFormProps) {
   // Campaign Container States
   const [companyName, setCompanyName] = useState(initialData?.companyName || "");
@@ -304,192 +311,128 @@ export default function CampaignForm({
               </div>
             </div>
 
-            {/* Step 2: Ad Creatives (1:N Tabbed Manager) */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
-              <div className="bg-gray-50/80 px-6 py-3.5 border-b border-gray-200 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold">
-                    2
-                  </span>
-                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">
-                    Ad Creatives & Variations ({ads.length})
-                  </h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleAddAd}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 hover:text-white bg-blue-50 hover:bg-blue-600 border border-blue-200 hover:border-blue-600 transition-all cursor-pointer shadow-xs"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Add Creative
-                </button>
-              </div>
-
-              {/* Tab Selector Bar */}
-              <div className="px-6 pt-4 pb-2 border-b border-gray-100 bg-white">
-                <div className="flex items-center gap-2 overflow-x-auto pb-2">
-                  {ads.map((ad, idx) => {
-                    const isComplete = Boolean(ad.title && ad.description && (ad.imageUrl || ad.videoUrl) && ad.destinationUrl);
-                    const isActive = activeAdIndex === idx;
-                    return (
-                      <div
-                        key={idx}
-                        onClick={() => setActiveAdIndex(idx)}
-                        className={`group relative flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer select-none shrink-0 ${
-                          isActive
-                            ? "bg-blue-600 text-white shadow-xs ring-2 ring-blue-600/20"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        }`}
-                      >
-                        <span className={`w-2 h-2 rounded-full ${isComplete ? (isActive ? "bg-green-300" : "bg-green-500") : (isActive ? "bg-amber-300" : "bg-amber-400")}`} />
-                        <span>Creative #{idx + 1}</span>
-                        {ad.title && (
-                          <span className={`max-w-[90px] truncate text-[11px] ${isActive ? "text-blue-100" : "text-gray-500"}`}>
-                            ({ad.title})
-                          </span>
-                        )}
-                        {ads.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemoveAd(idx);
-                            }}
-                            className={`ml-1 p-0.5 rounded hover:bg-black/20 text-xs transition-colors ${
-                              isActive ? "text-white" : "text-gray-400 hover:text-red-600"
-                            }`}
-                            title="Remove this variation"
-                          >
-                            ✕
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Active Creative Editor Form */}
-              <div className="p-6 space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-blue-600 uppercase tracking-wider bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100">
-                      Editing Variation #{activeAdIndex + 1} of {ads.length}
+            {/* Step 2: Ad Creatives Section */}
+            {isEdit ? (
+              <div className="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
+                <div className="bg-gray-50/80 px-6 py-3.5 border-b border-gray-200 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold">
+                      2
                     </span>
+                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">
+                      Existing Creatives ({ads.length})
+                    </h3>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleDuplicateAd(activeAdIndex)}
-                      className="text-xs font-semibold text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-md transition-colors cursor-pointer flex items-center gap-1"
+                  {campaignId && (
+                    <Link
+                      href={`/dashboard/ads/new?campaignId=${campaignId}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 hover:text-white bg-blue-50 hover:bg-blue-600 border border-blue-200 hover:border-blue-600 transition-all cursor-pointer shadow-xs font-sans"
                     >
-                      <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
                       </svg>
-                      Duplicate
-                    </button>
-                    {ads.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveAd(activeAdIndex)}
-                        className="text-xs font-semibold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-md transition-colors cursor-pointer"
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </div>
+                      Add Creative
+                    </Link>
+                  )}
                 </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      Ad Headline / Title <span className="text-red-500">*</span>
-                    </label>
-                    <span className="text-[11px] text-gray-400">{currentAd.title.length}/50</span>
-                  </div>
-                  <input
-                    type="text"
-                    required
-                    maxLength={50}
-                    value={currentAd.title}
-                    onChange={(e) => handleUpdateCurrentAd("title", e.target.value)}
-                    placeholder="e.g., Launch Your Dream Business in 5 Minutes"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white placeholder-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all font-medium"
-                  />
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      Ad Description <span className="text-red-500">*</span>
-                    </label>
-                    <span className="text-[11px] text-gray-400">{currentAd.description.length}/200</span>
-                  </div>
-                  <textarea
-                    required
-                    rows={3}
-                    maxLength={200}
-                    value={currentAd.description}
-                    onChange={(e) => handleUpdateCurrentAd("description", e.target.value)}
-                    placeholder="Briefly describe your offer, unique value proposition, or discount..."
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white placeholder-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all resize-none"
-                  />
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      Creative Media URL <span className="text-red-500">*</span>
-                    </label>
-                    <span className="text-[11px] text-gray-400">Image or Video URL (.mp4, .webm, .jpg, .png, etc.)</span>
-                  </div>
-                  <input
-                    type="url"
-                    required
-                    value={currentAd.videoUrl || currentAd.imageUrl || ""}
-                    onChange={(e) => handleUpdateCurrentAdMedia(e.target.value)}
-                    placeholder="https://example.com/media.jpg or https://example.com/video.mp4"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white placeholder-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                    Destination Landing URL <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="url"
-                    required
-                    value={currentAd.destinationUrl}
-                    onChange={(e) => handleUpdateCurrentAd("destinationUrl", e.target.value)}
-                    placeholder="https://yourwebsite.com/promo"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white placeholder-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                    Call To Action (CTA) Button
-                  </label>
-                  <select
-                    value={currentAd.ctaText}
-                    onChange={(e) => handleUpdateCurrentAd("ctaText", e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 outline-none transition-all cursor-pointer font-medium"
-                  >
-                    <option value="Learn More">Learn More</option>
-                    <option value="Sign Up">Sign Up</option>
-                    <option value="Book Now">Book Now</option>
-                    <option value="Shop Now">Shop Now</option>
-                    <option value="Download">Download</option>
-                    <option value="Apply Now">Apply Now</option>
-                    <option value="Contact Us">Contact Us</option>
-                    <option value="Get Offer">Get Offer</option>
-                  </select>
+                <div className="p-6">
+                  {ads.length === 0 ? (
+                    <div className="text-center py-6 text-xs text-gray-500">
+                      No creatives configured for this campaign. Click Add Creative above to configure one.
+                    </div>
+                  ) : (
+                    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-xs">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="bg-gray-50 text-gray-500 uppercase font-semibold border-b border-gray-150">
+                            <th className="px-4 py-2.5">Title</th>
+                            <th className="px-4 py-2.5">Type</th>
+                            <th className="px-4 py-2.5">Approval</th>
+                            <th className="px-4 py-2.5 text-right">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {ads.map((ad, idx) => (
+                            <tr key={ad.id || idx} className="hover:bg-gray-50/50">
+                              <td className="px-4 py-3 font-semibold text-gray-800 truncate max-w-[200px]">
+                                {ad.title}
+                              </td>
+                              <td className="px-4 py-3 text-gray-500">
+                                {ad.videoUrl ? "Video" : "Image"}
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase border shadow-2xs ${
+                                  ad.approval_status === 'approved' ? 'bg-green-50 text-green-800 border-green-300' :
+                                  ad.approval_status === 'rejected' ? 'bg-red-50 text-red-800 border-red-300' :
+                                  'bg-yellow-50 text-yellow-800 border-yellow-300'
+                                }`}>
+                                  {ad.approval_status || 'pending'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-right flex items-center justify-end gap-3">
+                                {ad.id && (
+                                  <Link
+                                    href={`/dashboard/ads/${ad.id}/edit`}
+                                    className="text-blue-600 hover:text-blue-700 font-bold"
+                                  >
+                                    Edit
+                                  </Link>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (ads.length <= 1) {
+                                      alert("A campaign must have at least one creative remaining. If you want to replace this, create a new one first.");
+                                      return;
+                                    }
+                                    if (confirm("Are you sure you want to delete this ad creative? This will be finalized when you submit the campaign form edits.")) {
+                                      setAds(ads.filter((_, i) => i !== idx));
+                                    }
+                                  }}
+                                  className="text-red-600 hover:text-red-700 font-bold bg-transparent border-0 cursor-pointer"
+                                >
+                                  Delete
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
+                <div className="bg-gray-50/80 px-6 py-3.5 border-b border-gray-200">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold">
+                      2
+                    </span>
+                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">
+                      Configure Initial Ad Creative
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="p-6">
+                  {/* Reusable Form Inputs */}
+                  <AdCreativeFormFields
+                    values={{
+                      title: currentAd.title,
+                      description: currentAd.description,
+                      imageUrl: currentAd.imageUrl,
+                      videoUrl: currentAd.videoUrl,
+                      destinationUrl: currentAd.destinationUrl,
+                      ctaText: currentAd.ctaText || "Learn More",
+                    }}
+                    onChange={handleUpdateCurrentAd}
+                    onMediaChange={handleUpdateCurrentAdMedia}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Submit Action */}
             <div className="pt-2">
@@ -517,95 +460,35 @@ export default function CampaignForm({
           </form>
         </div>
 
-        {/* RIGHT COLUMN: Interactive Live Preview */}
+        {/* RIGHT COLUMN: Interactive Live Preview / Budget Info */}
         <div className="lg:col-span-5 lg:sticky lg:top-6 space-y-5">
-          {/* Header with Live Badge and Creative Switcher */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="flex h-2.5 w-2.5 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-              </span>
-              <h3 className="text-xs font-bold text-gray-700 uppercase tracking-widest">
-                Live Native Ad Preview
-              </h3>
-            </div>
-            <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
-              Variation {activeAdIndex + 1} of {ads.length}
-            </span>
-          </div>
-
-          {/* Ad Mockup Card */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-xl overflow-hidden group hover:border-blue-400 transition-all max-w-sm mx-auto">
-            {/* Media Banner (Image or Video) */}
-            <div className="h-48 bg-linear-to-br from-gray-100 to-gray-200 w-full relative border-b border-gray-100 flex items-center justify-center overflow-hidden">
-              {previewIsVideo && previewMediaUrl ? (
-                <video
-                  key={previewMediaUrl}
-                  src={previewMediaUrl}
-                  controls
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  preload="auto"
-                  className="w-full h-full object-cover"
-                />
-              ) : previewMediaUrl ? (
-                <img
-                  src={previewMediaUrl}
-                  alt="Ad Creative"
-                  className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
-                  onError={(e) => {
-                    (e.target as HTMLElement).style.display = "none";
-                  }}
-                />
-              ) : (
-                <div className="text-center p-4">
-                  <svg className="w-10 h-10 text-gray-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <span className="text-gray-400 text-xs font-medium">Add Image/Video URL to Preview</span>
+          {!isEdit && (
+            <>
+              {/* Header with Live Badge */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-2.5 w-2.5 relative">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                  </span>
+                  <h3 className="text-xs font-bold text-gray-700 uppercase tracking-widest">
+                    Live Native Ad Preview
+                  </h3>
                 </div>
-              )}
-              <div className="absolute top-2.5 right-2.5 bg-black/70 backdrop-blur-md text-white text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider shadow-xs">
-                Sponsored
               </div>
-            </div>
 
-            {/* Content Body */}
-            <div className="p-5">
-              <div className="text-[11px] font-bold text-blue-600 uppercase tracking-wider mb-1.5">
-                {companyName || "Your Company Name"}
-              </div>
-              <h4 className="text-base font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1 leading-snug">
-                {currentAd.title || "Enter an eye-catching title..."}
-              </h4>
-              <p className="text-xs text-gray-600 mt-2 line-clamp-2 leading-relaxed">
-                {currentAd.description || "Your ad copy will appear here to persuade your target audience."}
-              </p>
-
-              {/* Footer CTA & Destination */}
-              <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-                <span className="text-xs text-gray-400 font-medium truncate max-w-[140px]">
-                  {currentAd.destinationUrl ? (
-                    (() => {
-                      try {
-                        return new URL(currentAd.destinationUrl).hostname;
-                      } catch {
-                        return "invalid-url";
-                      }
-                    })()
-                  ) : (
-                    "yourwebsite.com"
-                  )}
-                </span>
-                <span className="inline-flex items-center gap-1 text-xs font-bold text-white bg-blue-600 group-hover:bg-blue-700 px-3 py-1.5 rounded-lg shadow-xs transition-colors">
-                  {currentAd.ctaText || "Learn More"} →
-                </span>
-              </div>
-            </div>
-          </div>
+              {/* Reusable Ad Mockup Card */}
+              <AdPreviewCard
+                companyName={companyName || "Your Company Name"}
+                title={currentAd.title || "Enter an eye-catching title..."}
+                description={currentAd.description || "Your ad copy will appear here to persuade your target audience."}
+                mediaUrl={previewMediaUrl}
+                isVideo={previewIsVideo}
+                destinationUrl={currentAd.destinationUrl}
+                ctaText={currentAd.ctaText || "Learn More"}
+              />
+            </>
+          )}
 
           {/* Campaign Budget Estimation Card */}
           <div className="bg-linear-to-br from-slate-50 to-blue-50/40 border border-blue-100/80 rounded-xl p-4 text-xs text-gray-700 space-y-3 max-w-sm mx-auto shadow-xs">
