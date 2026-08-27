@@ -1,10 +1,10 @@
-# Self-Serve Native Ad Platform API
+# Self-Serve Native Ad Platform
 
-A decoupled Next.js REST API and Dashboard for managing, serving, and tracking native advertising campaigns with real-time financial tracking and atomic PostgreSQL concurrency control.
+This is a self-serve native advertising platform built with Next.js 15, React, Tailwind CSS, and PostgreSQL. It allows advertisers to create, run, and track native ad campaigns using a hybrid budget model (both CPC and CPM simultaneously) with real-time analytics. It includes an administrative moderation workflow for approving, rejecting, or pausing campaigns before they go live.
 
 ---
 
-Here are the exact commands required to build, run, and test the project.
+##  Quick Start
 
 ## Install Dependencies
 To install dependencies and prepare the environment:
