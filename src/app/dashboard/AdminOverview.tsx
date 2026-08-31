@@ -42,6 +42,8 @@ interface AdminOverviewProps {
   totalSpend: number;
   totalBudget: number;
   currentUserId?: number;
+  currentPage?: number;
+  totalPages?: number;
 }
 
 export default function AdminOverview({
@@ -55,6 +57,8 @@ export default function AdminOverview({
   totalSpend,
   totalBudget,
   currentUserId,
+  currentPage = 1,
+  totalPages = 1,
 }: AdminOverviewProps) {
   
   // Aggregate timeline data across all campaigns for a platform-wide chart
@@ -240,7 +244,14 @@ export default function AdminOverview({
           </div>
         ) : (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <DashboardTable campaigns={campaigns} eventMap={eventMap} timelineMap={timelineMap} currentUserId={currentUserId} />
+            <DashboardTable 
+              campaigns={campaigns} 
+              eventMap={eventMap} 
+              timelineMap={timelineMap} 
+              currentUserId={currentUserId}
+              currentPage={currentPage}
+              totalPages={totalPages}
+            />
           </div>
         )}
       </div>

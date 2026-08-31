@@ -28,16 +28,28 @@ export default async function DashboardOverview({ searchParams }: PageProps) {
   // 1. Fetch campaigns (All for admin, only user's for advertiser)
   const campaignsQuery = isAdmin
     ? `SELECT c.*, cf.billing_type, cf.cpc_rate, cf.cpm_rate, cf.total_budget, cf.spent_amount 
-       FROM campaigns c 
-       LEFT JOIN campaign_finances cf ON c.id = cf.campaign_id 
-       ORDER BY c.created_at DESC`
+     FROM campaigns c 
+     LEFT JOIN campaign_finances cf ON c.id = cf.campaign_id 
+     ORDER BY c.created_at DESC
+     LIMIT $1 OFFSET $2`
     : `SELECT c.*, cf.billing_type, cf.cpc_rate, cf.cpm_rate, cf.total_budget, cf.spent_amount 
-       FROM campaigns c 
-       LEFT JOIN campaign_finances cf ON c.id = cf.campaign_id 
-       WHERE c.user_id = $1 
-       ORDER BY c.created_at DESC`;
-  const campaignsParams = isAdmin ? [] : [payload.userId];
+     FROM campaigns c 
+     LEFT JOIN campaign_finances cf ON c.id = cf.campaign_id 
+     WHERE c.user_id = $1 
+     ORDER BY c.created_at DESC
+     LIMIT $2 OFFSET $3`;
+
+  const campaignsParams = isAdmin ? [pageSize, offset] : [payload.userId, pageSize, offset];
   const { rows: dbCampaigns } = await query(campaignsQuery, campaignsParams);
+
+  const countQuery = isAdmin  
+    ? `SELECT COUNT(*)::int as count FROM campaigns`
+    : `SELECT COUNT(*)::int as count FROM campaigns WHERE user_id = $1`;
+  const countParams = isAdmin ? [] : [payload.userId];
+  const { rows: countRows } = await query(countQuery, countParams);
+  const totalCampaigns = countRows[0]?.count || 0;
+  const totalPages = Math.ceil(totalCampaigns / pageSize);
+
 
   // 1b. Fetch all ads for fetched campaigns
   const campaignIds = dbCampaigns.map(c => c.id);
@@ -137,9 +149,9 @@ export default async function DashboardOverview({ searchParams }: PageProps) {
   });
 
   // Build per-campaign event metrics map
-  const eventMap: Record<number, { 
-    serve: number; 
-    view: number; 
+  const eventMap: Record<number, {
+    serve: number;
+    view: number;
     click: number;
     videoStart: number;
     videoQ1: number;
@@ -190,8 +202,7 @@ export default async function DashboardOverview({ searchParams }: PageProps) {
     });
   });
   const now = new Date();
-  const totalCampaigns = campaigns.length;
-  
+
   const activePlacements = campaigns.filter((c) => {
     const start = new Date(c.start_date);
     const end = new Date(c.end_date);
@@ -225,6 +236,8 @@ export default async function DashboardOverview({ searchParams }: PageProps) {
         totalSpend={totalSpend}
         totalBudget={totalBudget}
         currentUserId={payload.userId as number}
+        currentPage={currentPage}
+        totalPages={totalPages}
       />
     );
   }
@@ -342,7 +355,14 @@ export default async function DashboardOverview({ searchParams }: PageProps) {
           </Link>
         </div>
       ) : (
-        <DashboardTable campaigns={campaigns} eventMap={eventMap} timelineMap={timelineMap} currentUserId={payload.userId as number} />
+        <DashboardTable 
+          campaigns={campaigns} 
+          eventMap={eventMap} 
+          timelineMap={timelineMap} 
+          currentUserId={payload.userId as number}
+          currentPage={currentPage}
+          totalPages={totalPages}
+        />
       )}
     </div>
   );

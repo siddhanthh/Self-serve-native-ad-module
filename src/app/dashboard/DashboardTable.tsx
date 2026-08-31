@@ -52,12 +52,16 @@ export default function DashboardTable({
   campaigns,
   eventMap,
   timelineMap,
-  currentUserId
+  currentUserId,
+  currentPage = 1,
+  totalPages = 1,
 }: {
   campaigns: Campaign[];
   eventMap: EventMap;
   timelineMap: TimelineMap;
   currentUserId?: number;
+  currentPage?: number;
+  totalPages?: number;
 }) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [activePreviewAd, setActivePreviewAd] = useState<Record<number, Ad>>({});
@@ -413,6 +417,77 @@ export default function DashboardTable({
           </tbody>
         </table>
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between border-t border-gray-200 px-6 py-4 bg-gray-50/50">
+          <div className="flex flex-1 justify-between sm:hidden">
+            <Link
+              href={`/dashboard?page=${currentPage - 1}`}
+              className={`relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors ${
+                currentPage <= 1 ? "pointer-events-none opacity-50" : ""
+              }`}
+            >
+              Previous
+            </Link>
+            <Link
+              href={`/dashboard?page=${currentPage + 1}`}
+              className={`relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors ${
+                currentPage >= totalPages ? "pointer-events-none opacity-50" : ""
+              }`}
+            >
+              Next
+            </Link>
+          </div>
+          <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs text-gray-500">
+                Showing page <strong className="font-semibold text-gray-900">{currentPage}</strong> of{" "}
+                <strong className="font-semibold text-gray-900">{totalPages}</strong>
+              </p>
+            </div>
+            <div>
+              <nav className="isolate inline-flex -space-x-px rounded-md shadow-xs" aria-label="Pagination">
+                <Link
+                  href={`/dashboard?page=${currentPage - 1}`}
+                  className={`relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 ${
+                    currentPage <= 1 ? "pointer-events-none opacity-40 bg-gray-50" : ""
+                  }`}
+                >
+                  <span className="sr-only">Previous</span>
+                  ←
+                </Link>
+                {Array.from({ length: totalPages }).map((_, i) => {
+                  const pageNumber = i + 1;
+                  const isCurrent = pageNumber === currentPage;
+                  return (
+                    <Link
+                      key={pageNumber}
+                      href={`/dashboard?page=${pageNumber}`}
+                      className={`relative inline-flex items-center px-3 py-2 text-xs font-bold ring-1 ring-inset ring-gray-300 transition-all ${
+                        isCurrent
+                          ? "z-10 bg-blue-600 text-white ring-blue-600"
+                          : "text-gray-950 hover:bg-gray-50"
+                      }`}
+                    >
+                      {pageNumber}
+                    </Link>
+                  );
+                })}
+                <Link
+                  href={`/dashboard?page=${currentPage + 1}`}
+                  className={`relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 ${
+                    currentPage >= totalPages ? "pointer-events-none opacity-40 bg-gray-50" : ""
+                  }`}
+                >
+                  <span className="sr-only">Next</span>
+                  →
+                </Link>
+              </nav>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
